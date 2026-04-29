@@ -2,7 +2,7 @@ import { corsHeaders } from "../_shared/cors.ts";
 
 const SYSTEM_PROMPT = `You are a financial transaction parser for an Indian personal finance app.
 
-Parse the user's sentence and return ONLY a valid JSON object. No explanation.
+Parse the user's natural language text and return ONLY a valid JSON object. No explanation.
 No markdown. No code blocks. Just the raw JSON.
 
 Output format:
@@ -10,7 +10,7 @@ Output format:
   "type": "income" | "expense",
   "amount": <number, no currency symbols>,
   "category": "<one of the allowed categories>",
-  "description": "<short clean label>",
+  "description": "<short clean label, max 4 words, title case>",
   "date": "<YYYY-MM-DD>" | null
 }
 
@@ -18,13 +18,32 @@ Allowed categories:
   expense: Food, Transport, Shopping, Bills, Health, Entertainment, Other
   income:  Salary, Pocket Money, Freelance, Other
 
-Rules:
-- buying / paying / spending / eating / bill / subscription -> expense
-- received / salary / pocket money / earned / got / income  -> income
-- Strip currency words: rs, rupees, inr -> just the number
-- date: convert "yesterday", "monday", "12 april" -> YYYY-MM-DD, else null
-- description: max 4 words, title case, no currency
-- Always pick the closest matching category`;
+Classification rules (VERY IMPORTANT — follow strictly):
+EXPENSE keywords/contexts — if ANY of these appear, classify as "expense":
+  - buying, bought, paid, spent, spending, bill, subscription, ordered, ate, eaten
+  - food items: panipuri, biryani, pizza, burger, chai, coffee, samosa, dosa, etc.
+  - shopping items: shoes, clothes, phone, laptop, etc.
+  - services: uber, ola, cab, auto, bus, train, metro, petrol, diesel
+  - bills: electricity, water, gas, wifi, internet, mobile recharge, rent
+  - health: doctor, medicine, hospital, pharmacy, gym
+  - entertainment: movie, netflix, spotify, game, concert
+  - If text is JUST a food/item name with a number, it's ALWAYS an expense
+  - "20 panipuri" = expense (buying panipuri)
+  - "500 netflix" = expense (netflix subscription)
+  - "1200 electricity" = expense (electricity bill)
+
+INCOME keywords/contexts — ONLY classify as income if these appear:
+  - received, credited, salary, wages, pocket money, allowance, earned, got paid, got
+  - freelance, project payment, refund, cashback, bonus, dividend, interest
+  - Words like "received", "credited", "earned", "got" MUST be present for income
+
+DEFAULT: If ambiguous and no clear income keyword exists, default to EXPENSE.
+
+Other rules:
+- Strip currency words: rs, rupees, inr, ₹ -> just the number
+- date: convert "yesterday", "monday", "12 april" -> YYYY-MM-DD using today's date, else null
+- description: max 4 words, title case, no currency symbols
+- Always pick the closest matching category from the allowed list`;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -56,52 +75,82 @@ Deno.serve(async (req) => {
 
   const today = body.today || new Date().toISOString().slice(0, 10);
 
-  const response = await fetch(
-    "https://api.groq.com/openai/v1/chat/completions",
+  // Try primary model, then fallback
+  const models = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"];
+  let lastError = "";
+
+  for (const model of models) {
+    try {
+      const response = await fetch(
+        "https://api.groq.com/openai/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${groqApiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model,
+            temperature: 0.05,
+            max_tokens: 200,
+            messages: [
+              { role: "system", content: SYSTEM_PROMPT },
+              { role: "user", content: `Today is ${today}. Parse: "${body.text}"` },
+            ],
+          }),
+        },
+      );
+
+      if (!response.ok) {
+        lastError = await response.text();
+        console.error(`Model ${model} failed:`, lastError);
+        continue; // try next model
+      }
+
+      const data = await response.json();
+      const content = data?.choices?.[0]?.message?.content?.trim();
+
+      // Strip any markdown code fences the model may have added
+      const cleaned = content
+        ?.replace(/```json\s*/gi, "")
+        ?.replace(/```\s*/g, "")
+        ?.trim();
+
+      const parsed = JSON.parse(cleaned);
+
+      // Validate required fields
+      if (!parsed.type || !parsed.amount || !parsed.category) {
+        lastError = "Missing required fields in parsed result";
+        continue;
+      }
+
+      // Ensure type is valid
+      if (!["income", "expense"].includes(parsed.type)) {
+        parsed.type = "expense";
+      }
+
+      // Ensure amount is a number
+      parsed.amount = Number(parsed.amount);
+      if (isNaN(parsed.amount) || parsed.amount <= 0) {
+        lastError = "Invalid amount";
+        continue;
+      }
+
+      return new Response(JSON.stringify(parsed), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    } catch (error) {
+      lastError = error.message || "Parse error";
+      console.error(`Model ${model} error:`, error);
+      continue;
+    }
+  }
+
+  return new Response(
+    JSON.stringify({ error: lastError || "All models failed" }),
     {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${groqApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "openai/gpt-oss-120b",
-        temperature: 0.1,
-        max_tokens: 150,
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: `Today is ${today}. Parse: "${body.text}"` },
-        ],
-      }),
+      status: 422,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     },
   );
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    return new Response(
-      JSON.stringify({ error: errorText || "Groq request failed" }),
-      {
-        status: 502,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
-    );
-  }
-
-  const data = await response.json();
-  const content = data?.choices?.[0]?.message?.content?.trim();
-
-  try {
-    const parsed = JSON.parse(content);
-    return new Response(JSON.stringify(parsed), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  } catch (error) {
-    return new Response(
-      JSON.stringify({ error: "Invalid JSON from parser" }),
-      {
-        status: 422,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
-    );
-  }
 });
