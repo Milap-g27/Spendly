@@ -216,7 +216,7 @@ function DesktopHeader({ route, displayName }) {
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 
-function DashboardScreen({ displayName, transactions, totalSpent, topCategory, onSeeAll, onInsights }) {
+function DashboardScreen({ displayName, transactions, totalSpent, transactionCount, topCategory, onSeeAll, onInsights }) {
   const recent = transactions.slice(0, 4);
   return (
     <div className="screen">
@@ -233,7 +233,7 @@ function DashboardScreen({ displayName, transactions, totalSpent, topCategory, o
       <div className="summary-grid">
         <div className="card summary-card">
           <p className="card-label">Transactions</p>
-          <h3 className="summary-value">{transactions.length}</h3>
+          <h3 className="summary-value">{transactionCount}</h3>
         </div>
         <button className="card summary-card" onClick={onInsights}>
           <p className="card-label">Top Category</p>
@@ -447,6 +447,102 @@ function ProfileScreen({ displayName, session }) {
         <div className="profile-avatar-large">{displayName[0]?.toUpperCase() || "N"}</div>
         <h3 className="profile-name">{displayName}</h3>
         <p className="profile-email">{session?.user?.email || "demo@spendly.app"}</p>
+        <button
+          className="btn"
+          style={{ marginTop: "1.5rem", background: "none", border: "1px solid var(--red-base)", color: "var(--red-base)", width: "100%", padding: "10px", borderRadius: "8px", fontWeight: "600", cursor: "pointer" }}
+          onClick={() => supabase.auth.signOut()}
+        >
+          Sign Out
+        </button>
+      </section>
+    </div>
+  );
+}
+
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+
+function AuthScreen({ supabase }) {
+  const [isLogin, setIsLogin] = useState(true);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    const authAction = isLogin
+      ? supabase.auth.signInWithPassword({ email, password })
+      : supabase.auth.signUp({ email, password, options: { data: { full_name: email.split("@")[0] } } });
+
+    const { data, error } = await authAction;
+
+    if (error) {
+      setError(error.message);
+    } else if (!isLogin && !data?.session) {
+      setError("Signed up successfully! You can now sign in.");
+      setIsLogin(true); // Switch to login after signup
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="screen" style={{ justifyContent: "center", display: "flex", flexDirection: "column", height: "100vh", alignItems: "center", padding: "1rem" }}>
+      <section className="card" style={{ width: "100%", maxWidth: 400, padding: "2rem" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "1.5rem", gap: "0.5rem" }}>
+          <div className="app-logo">S</div>
+          <h2 style={{ fontSize: "1.5rem", margin: 0 }}>Spendly</h2>
+        </div>
+        <h3 style={{ marginBottom: "1.5rem", textAlign: "center", fontSize: "1.25rem", margin: "0 0 1.5rem 0", color: "var(--text)" }}>
+          {isLogin ? "Sign In" : "Create Account"}
+        </h3>
+        
+        {error && (
+          <div style={{ color: "#b91c1c", fontSize: "14px", marginBottom: "1rem", padding: "0.75rem", background: "#fee2e2", borderRadius: 6 }}>
+            {error}
+          </div>
+        )}
+        
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+          <div>
+            <label style={{ display: "block", fontSize: "14px", fontWeight: 600, marginBottom: "0.5rem", color: "var(--text)" }}>Email</label>
+            <input 
+              type="email" 
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)} 
+              required 
+              style={{ width: "100%", padding: "0.75rem", borderRadius: 8, border: "1px solid var(--border)", fontSize: "16px", background: "var(--card)", boxSizing: "border-box", outline: "none" }} 
+            />
+          </div>
+          <div>
+            <label style={{ display: "block", fontSize: "14px", fontWeight: 600, marginBottom: "0.5rem", color: "var(--text)" }}>Password</label>
+            <input 
+              type="password" 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              required 
+              style={{ width: "100%", padding: "0.75rem", borderRadius: 8, border: "1px solid var(--border)", fontSize: "16px", background: "var(--card)", boxSizing: "border-box", outline: "none" }} 
+            />
+          </div>
+          <button 
+            type="submit" 
+            disabled={loading} 
+            style={{ background: "var(--accent)", color: "#fff", padding: "0.875rem", borderRadius: 8, fontWeight: 600, border: "none", cursor: loading ? "default" : "pointer", marginTop: "0.5rem", fontSize: "16px", opacity: loading ? 0.7 : 1 }}
+          >
+            {loading ? "Please wait..." : isLogin ? "Sign In" : "Sign Up"}
+          </button>
+        </form>
+        <p style={{ textAlign: "center", fontSize: "14px", marginTop: "1.5rem", color: "var(--muted)" }}>
+          {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
+          <button 
+            onClick={() => { setIsLogin(!isLogin); setError(null); }} 
+            style={{ background: "none", border: "none", color: "var(--accent)", fontWeight: 600, cursor: "pointer", padding: 0 }}
+          >
+            {isLogin ? "Sign Up" : "Sign In"}
+          </button>
+        </p>
       </section>
     </div>
   );
@@ -471,7 +567,7 @@ export default function App() {
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState(filterTabs[0]);
   const [session, setSession] = useState(null);
-  const [transactions, setTransactions] = useState(attachIcons(demoTransactions));
+  const [transactions, setTransactions] = useState([]);
 
   useEffect(() => {
     if (!window.location.hash) window.location.hash = "#/dashboard";
@@ -490,15 +586,22 @@ export default function App() {
   useEffect(() => {
     let active = true;
     async function loadTransactions() {
-      if (!supabaseUrl || !session?.access_token) {
-        setTransactions(attachIcons(demoTransactions)); return;
+      if (!supabaseUrl || !session?.user) {
+        setTransactions([]);
+        return;
       }
       try {
-        const result = await edgeFetch("/transactions?limit=50", { token: session.access_token });
+        const { data, error } = await supabase
+          .from("transactions")
+          .select("*")
+          .order("transaction_date", { ascending: false });
+
+        if (error) throw error;
         if (!active) return;
-        setTransactions(result?.data ? attachIcons(result.data) : []);
-      } catch {
-        if (active) setTransactions(attachIcons(demoTransactions));
+        setTransactions(data ? attachIcons(data) : []);
+      } catch (err) {
+        console.error("Error loading transactions:", err);
+        if (active) setTransactions([]);
       }
     }
     loadTransactions();
@@ -510,36 +613,60 @@ export default function App() {
     return session.user.user_metadata?.full_name || session.user.email?.split("@")[0] || "User";
   }, [session]);
 
+  const expenses = useMemo(() => {
+    return transactions.filter((i) => i.type !== "income");
+  }, [transactions]);
+
+  const transactionCount = expenses.length;
+
   const totalSpent = useMemo(() =>
-    transactions.filter((i) => i.type !== "income").reduce((s, i) => s + Number(i.amount || 0), 0),
-    [transactions]
+    expenses.reduce((s, i) => s + Number(i.amount || 0), 0),
+    [expenses]
   );
 
   const byCategory = useMemo(() => {
+    if (expenses.length === 0) return [];
+    
     const totals = new Map();
-    transactions.forEach((item) => {
-      if (item.type === "income") return;
+    expenses.forEach((item) => {
       totals.set(item.category, (totals.get(item.category) || 0) + Number(item.amount || 0));
     });
+    
     const total = totalSpent || 1;
-    return Array.from(totals.entries())
+    let list = Array.from(totals.entries())
       .map(([name, amount]) => ({
-        name, amount,
+        name,
+        amount,
         color: getCategoryMeta(name).color,
         percent: Math.round((amount / total) * 100),
       }))
       .sort((a, b) => b.amount - a.amount);
-  }, [transactions, totalSpent]);
+      
+    if (list.length > 0) {
+      const sumPct = list.reduce((s, i) => s + i.percent, 0);
+      const diff = 100 - sumPct;
+      if (diff !== 0) {
+        // Adjust the largest category to absorb rounding remainders
+        list[0].percent += diff;
+      }
+    }
+    
+    return list;
+  }, [expenses, totalSpent]);
 
-  const topCategory = byCategory[0]?.name || "Shopping";
+  const topCategory = byCategory.length > 0 ? byCategory[0].name : "—";
   const navigate = (next) => { window.location.hash = `#/${next}`; };
+
+  if (!session) {
+    return <AuthScreen supabase={supabase} />;
+  }
 
   const screenContent = (
     <>
       {route === "dashboard" && (
         <DashboardScreen
           displayName={displayName} transactions={transactions}
-          totalSpent={totalSpent} topCategory={topCategory}
+          totalSpent={totalSpent} transactionCount={transactionCount} topCategory={topCategory}
           onSeeAll={() => navigate("transactions")}
           onInsights={() => navigate("insights")}
         />

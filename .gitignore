@@ -55,6 +55,7 @@ typings/
 .env.test.local
 .env.production.local
 **/ .env*
+frontend/.env
 
 # next.js build output
 .next/
@@ -86,3 +87,6 @@ Thumbs.db
 # Supabase
 supabase/.temp/
 .supabase/
+
+# Ignore spendly-main and all its contents
+spendly-main/
