@@ -18,7 +18,11 @@ export function AddTransactionScreen({ session, navigate, setTransactions }) {
     try {
       if (!session) throw new Error("Not logged in");
       
-      const today = new Date().toISOString().slice(0, 10);
+      const today = (() => {
+        const now = new Date();
+        const ist = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+        return ist.toISOString().slice(0, 10);
+      })();
       const result = await edgeFetch("/parse", { 
         method: "POST", 
         body: { text, today }, 
@@ -40,7 +44,11 @@ export function AddTransactionScreen({ session, navigate, setTransactions }) {
     try {
       if (!session) throw new Error("Not logged in");
 
-      const today = new Date().toISOString().slice(0, 10);
+      const today = (() => {
+        const now = new Date();
+        const ist = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+        return ist.toISOString().slice(0, 10);
+      })();
       
       const payload = {
         raw_input:        inputText,
@@ -101,7 +109,7 @@ export function AddTransactionScreen({ session, navigate, setTransactions }) {
           value={inputText}
           onChange={(e) => { setInputText(e.target.value); setAddError(""); }}
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleParse(); } }}
-          placeholder="e.g. 500 for netflix, 2500 pocket money received, paid 1200 electricity bill..."
+          placeholder="Add a transaction "
         />
 
       </div>
@@ -168,7 +176,23 @@ export function AddTransactionScreen({ session, navigate, setTransactions }) {
               </div>
               <div>
                 <p style={{ fontSize: 11, color: "var(--muted)", marginBottom: 4, fontWeight: 500 }}>DATE</p>
-                <p style={{ fontSize: 14, fontWeight: 600, color: "var(--text)" }}>{parsed.date ? formatShortDate(parsed.date) : "Today"}</p>
+                <p style={{ fontSize: 14, fontWeight: 600, color: "var(--text)" }}>{
+                  (() => {
+                    const todayStr = (() => {
+                      const now = new Date();
+                      const ist = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+                      return ist.toISOString().slice(0, 10);
+                    })();
+                    if (!parsed.date || parsed.date === todayStr) return "Today";
+                    
+                    const y = new Date(new Date().getTime() + (5.5 * 60 * 60 * 1000));
+                    y.setDate(y.getDate() - 1);
+                    const yStr = y.toISOString().slice(0, 10);
+                    
+                    if (parsed.date === yStr) return "Yesterday";
+                    return formatShortDate(parsed.date);
+                  })()
+                }</p>
               </div>
               <div style={{ gridColumn: "1 / -1" }}>
                 <p style={{ fontSize: 11, color: "var(--muted)", marginBottom: 4, fontWeight: 500 }}>DESCRIPTION</p>

@@ -222,6 +222,14 @@ input { font-family: inherit; }
 
 /* ── Insights ──────────────────────────────────────────────────────────── */
 
+.insights-header-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  margin-bottom: 0px;
+}
+
 .donut-card { display: flex; flex-direction: column; align-items: center; padding: 28px 20px; }
 
 .donut {
@@ -248,7 +256,7 @@ input { font-family: inherit; }
 .insights-columns {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 12px;
 }
 
 .category-card-header {
@@ -290,6 +298,7 @@ input { font-family: inherit; }
   border-radius: 10px; border: 1px solid var(--border);
   background: var(--card); color: var(--text); font-size: 13px; font-weight: 600;
   box-shadow: var(--shadow); cursor: pointer; transition: background 0.15s;
+  margin-left: auto;
 }
 
 .export-btn:hover { background: #f8fafc; }
