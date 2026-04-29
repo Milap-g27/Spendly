@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { formatCurrency, formatShortDate, getCategoryMeta } from "../lib/utils";
 import { filterTabs } from "../lib/constants";
 import { Icon } from "./Icons";
@@ -12,18 +12,26 @@ function getRelativeLabel(dateValue, referenceDate) {
 }
 
 export function TransactionsScreen({ transactions, search, setSearch, activeFilter, setActiveFilter, customRange, setCustomRange, onApplyCustom }) {
+  const [typeFilter, setTypeFilter] = useState("All");
+
   const sorted = useMemo(() =>
     [...transactions].sort((a, b) => b.transaction_date.localeCompare(a.transaction_date)),
     [transactions]
   );
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return sorted;
-    const value = search.trim().toLowerCase();
-    return sorted.filter((item) =>
-      `${item.description || ""} ${item.raw_input || ""}`.toLowerCase().includes(value)
-    );
-  }, [search, sorted]);
+    let result = sorted;
+    if (typeFilter !== "All") {
+      result = result.filter(item => item.type === typeFilter.toLowerCase());
+    }
+    if (search.trim()) {
+      const value = search.trim().toLowerCase();
+      result = result.filter((item) =>
+        `${item.description || ""} ${item.raw_input || ""}`.toLowerCase().includes(value)
+      );
+    }
+    return result;
+  }, [search, sorted, typeFilter]);
 
   const referenceDate = filtered.length
     ? new Date(`${filtered[0].transaction_date}T00:00:00`)
@@ -69,6 +77,18 @@ export function TransactionsScreen({ transactions, search, setSearch, activeFilt
           >
             Custom
           </button>
+        </div>
+
+        <div className="filter-presets-ref" style={{ marginLeft: "auto" }}>
+          {["All", "Income", "Expense"].map(type => (
+            <button
+              key={type}
+              className={`filter-preset-btn-ref ${typeFilter === type ? "active" : ""}`}
+              onClick={() => setTypeFilter(type)}
+            >
+              {type}
+            </button>
+          ))}
         </div>
         
         {activeFilter === "Custom" && (

@@ -117,18 +117,6 @@ function FAB({ session, onSaved }) {
             </button>
           </div>
 
-          {/* Example chips */}
-          {status === "idle" && !parsed && (
-            <div className="fab-example-chips">
-              {FAB_EXAMPLES.map((ex) => (
-                <button key={ex} className="fab-ex-chip"
-                  onClick={() => { setText(ex); handleParse(ex); }}>
-                  {ex}
-                </button>
-              ))}
-            </div>
-          )}
-
           {/* Parsing bar */}
           <div className={`fab-parsing-bar ${status === "parsing" ? "show" : ""}`}>
             <div className="fab-parsing-fill" style={{ width: status === "parsing" ? "80%" : "0%" }} />

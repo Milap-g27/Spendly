@@ -104,18 +104,6 @@ export function AddTransactionScreen({ session, navigate, setTransactions }) {
           placeholder="e.g. 500 for netflix, 2500 pocket money received, paid 1200 electricity bill..."
         />
 
-        {/* Example chips */}
-        <div className="example-chips">
-          {EXAMPLE_PHRASES.map((ex) => (
-            <button
-              key={ex}
-              className="example-chip"
-              onClick={() => { setInputText(ex); setAddError(""); }}
-            >
-              {ex}
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* ── Error ────────────────────────────────────────────────────────────── */}
