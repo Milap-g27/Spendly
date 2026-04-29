@@ -546,6 +546,98 @@ input { font-family: inherit; }
   border-color: var(--accent);
 }
 
+.filter-dropdowns-mobile {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.custom-dropdown-container {
+  position: relative;
+  flex: 1;
+  min-width: 0; /* needed for truncation in flex child */
+}
+
+.custom-dropdown-trigger {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.custom-dropdown-trigger:focus,
+.custom-dropdown-trigger:active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-light);
+}
+
+.custom-dropdown-trigger .truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+
+.custom-dropdown-trigger svg {
+  flex-shrink: 0;
+  color: var(--muted);
+}
+
+.custom-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 100%;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  z-index: 200;
+  overflow: hidden;
+  animation: dropdownFadeIn 0.15s ease-out;
+}
+
+@keyframes dropdownFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.custom-dropdown-item {
+  padding: 12px 14px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.custom-dropdown-item:active {
+  background: var(--bg);
+}
+
+.custom-dropdown-item.selected {
+  background: var(--accent-light);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+@media (max-width: 767px) {
+  .hide-on-mobile { display: none !important; }
+}
+@media (min-width: 768px) {
+  .hide-on-desktop { display: none !important; }
+}
+
 .filter-custom-row {
   display: flex;
   align-items: center;

@@ -41,7 +41,15 @@ DEFAULT: If ambiguous and no clear income keyword exists, default to EXPENSE.
 
 Other rules:
 - Strip currency words: rs, rupees, inr, ₹ -> just the number
-- date: convert "yesterday", "monday", "12 april" -> YYYY-MM-DD using today's date, else null
+- Date resolution rules (use today's date provided in the user message):
+  - "yesterday" -> subtract 1 day from today
+  - "day before yesterday" -> subtract 2 days from today
+  - Day names like "monday", "tuesday" -> most recent past occurrence (never future)
+  - "15 april", "april 15", "15th april" -> YYYY-MM-DD (use current year if no year given)
+  - "15th", "15" (day only, no month) -> use current month and year
+  - "last month 15th" -> previous month, day 15
+  - If NO date is mentioned at all -> return null (the app will default to today)
+  - Always return date in YYYY-MM-DD format
 - description: max 4 words, title case, no currency symbols
 - Always pick the closest matching category from the allowed list`;
 
@@ -73,7 +81,12 @@ Deno.serve(async (req) => {
     });
   }
 
-  const today = body.today || new Date().toISOString().slice(0, 10);
+  const today = body.today || (() => {
+    const now = new Date();
+    // IST = UTC + 5:30
+    const ist = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+    return ist.toISOString().slice(0, 10);
+  })();
 
   // Try primary model, then fallback
   const models = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"];

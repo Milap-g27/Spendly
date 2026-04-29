@@ -29,7 +29,12 @@ function FAB({ session, onSaved }) {
   const [status, setStatus]   = useState("idle"); // idle|parsing|ready|saving|done
   const [error, setError]     = useState("");
 
-  const today = new Date().toISOString().slice(0, 10);
+  // Compute today's date in IST (UTC+05:30) to avoid UTC date mismatch
+  const today = (() => {
+    const now = new Date();
+    const ist = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+    return ist.toISOString().slice(0, 10);
+  })();
 
   const close = () => {
     setOpen(false);
@@ -158,7 +163,17 @@ function FAB({ session, onSaved }) {
                       {parsed.category}
                     </span>
                     <span className="fab-meta-chip">{parsed.description}</span>
-                    <span className="fab-meta-chip">{parsed.date || "Today"}</span>
+                    <span className="fab-meta-chip">{
+                      (() => {
+                        if (!parsed.date || parsed.date === today) return "📅 Today";
+                        const y = new Date(new Date().getTime() + (5.5 * 60 * 60 * 1000));
+                        y.setDate(y.getDate() - 1);
+                        const yesterdayStr = y.toISOString().slice(0, 10);
+                        if (parsed.date === yesterdayStr) return "📅 Yesterday";
+                        const d = new Date(parsed.date + "T00:00:00");
+                        return "📅 " + d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+                      })()
+                    }</span>
                   </div>
                   <button
                     className={`fab-save-btn ${isIncome ? "income" : "expense"}`}

@@ -1,7 +1,49 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { formatCurrency, formatShortDate, getCategoryMeta } from "../lib/utils";
 import { filterTabs } from "../lib/constants";
 import { Icon } from "./Icons";
+
+function CustomDropdown({ value, options, onChange }) {
+  const [open, setOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div className="custom-dropdown-container" ref={dropdownRef}>
+      <button 
+        className="custom-dropdown-trigger" 
+        onClick={() => setOpen(!open)}
+      >
+        <span className="truncate">{value}</span>
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </button>
+      {open && (
+        <div className="custom-dropdown-menu">
+          {options.map(opt => (
+            <div 
+              key={opt} 
+              className={`custom-dropdown-item ${opt === value ? "selected" : ""}`}
+              onClick={() => { onChange(opt); setOpen(false); }}
+            >
+              {opt}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function getRelativeLabel(dateValue, referenceDate) {
   const date = new Date(`${dateValue}T00:00:00`);
@@ -61,34 +103,50 @@ export function TransactionsScreen({ transactions, search, setSearch, activeFilt
       </div>
 
       <div className="filter-bar-ref">
-        <div className="filter-presets-ref">
-          {filterTabs.filter(t => t !== "Custom").map((tab) => (
+        <div className="filter-presets-desktop hide-on-mobile" style={{ display: 'flex', width: '100%', flexWrap: 'wrap', gap: '12px' }}>
+          <div className="filter-presets-ref">
+            {filterTabs.filter(t => t !== "Custom").map((tab) => (
+              <button
+                key={tab}
+                className={`filter-preset-btn-ref ${activeFilter === tab ? "active" : ""}`}
+                onClick={() => setActiveFilter(tab)}
+              >
+                {tab}
+              </button>
+            ))}
             <button
-              key={tab}
-              className={`filter-preset-btn-ref ${activeFilter === tab ? "active" : ""}`}
-              onClick={() => setActiveFilter(tab)}
+              className={`filter-preset-btn-ref ${activeFilter === "Custom" ? "active" : ""}`}
+              onClick={() => setActiveFilter("Custom")}
             >
-              {tab}
+              Custom
             </button>
-          ))}
-          <button
-            className={`filter-preset-btn-ref ${activeFilter === "Custom" ? "active" : ""}`}
-            onClick={() => setActiveFilter("Custom")}
-          >
-            Custom
-          </button>
+          </div>
+
+          <div className="filter-presets-ref" style={{ marginLeft: "auto" }}>
+            {["All", "Income", "Expense"].map(type => (
+              <button
+                key={type}
+                className={`filter-preset-btn-ref ${typeFilter === type ? "active" : ""}`}
+                onClick={() => setTypeFilter(type)}
+              >
+                {type}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="filter-presets-ref" style={{ marginLeft: "auto" }}>
-          {["All", "Income", "Expense"].map(type => (
-            <button
-              key={type}
-              className={`filter-preset-btn-ref ${typeFilter === type ? "active" : ""}`}
-              onClick={() => setTypeFilter(type)}
-            >
-              {type}
-            </button>
-          ))}
+        <div className="filter-dropdowns-mobile hide-on-desktop">
+          <CustomDropdown
+            value={activeFilter}
+            options={filterTabs}
+            onChange={setActiveFilter}
+          />
+
+          <CustomDropdown
+            value={typeFilter}
+            options={["All", "Income", "Expense"]}
+            onChange={setTypeFilter}
+          />
         </div>
         
         {activeFilter === "Custom" && (
