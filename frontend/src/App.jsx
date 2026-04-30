@@ -13,6 +13,9 @@ import { InsightsScreen } from "./components/Insights";
 import { ProfileScreen } from "./components/Profile";
 import { AuthScreen } from "./components/Auth";
 import { AddTransactionScreen } from "./components/AddTransaction";
+import { PrivacyPolicyScreen } from "./pages/PrivacyPolicy";
+import { TermsScreen } from "./pages/Terms";
+import { ToastContainer } from "./components/Toast";
 
 /* ── FAB examples ─────────────────────────────────────────────────────── */
 const FAB_EXAMPLES = [
@@ -23,12 +26,13 @@ const FAB_EXAMPLES = [
 ];
 
 /* ── FAB Component ────────────────────────────────────────────────────── */
-function FAB({ session, onSaved }) {
+function FAB({ session, onSaved, addToast, onUndoTransaction }) {
   const [open, setOpen]       = useState(false);
   const [text, setText]       = useState("");
   const [parsed, setParsed]   = useState(null);
   const [status, setStatus]   = useState("idle"); // idle|parsing|ready|saving|done
   const [error, setError]     = useState("");
+  const [lastTxId, setLastTxId] = useState(null);
 
   const getISTDate = (offsetDays = 0) => {
     const d = new Date();
@@ -79,6 +83,20 @@ function FAB({ session, onSaved }) {
         token: session?.access_token,
       });
       setStatus("done");
+      
+      // Store transaction ID for undo
+      setLastTxId(saved.id);
+      
+      // Show success toast with undo
+      if (addToast) {
+        addToast(
+          `✓ ${parsed.type === "income" ? "Income" : "Expense"} of ₹${parsed.amount.toFixed(2)} added`,
+          "success",
+          5000,
+          () => onUndoTransaction?.(saved.id)
+        );
+      }
+      
       onSaved?.(saved);
       setTimeout(close, 1600);
     } catch (e) {
@@ -207,6 +225,31 @@ export default function App() {
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState(filterTabs[0]);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [profileName, setProfileName] = useState("User");
+  const [profileAvatarSrc, setProfileAvatarSrc] = useState("");
+  const [toasts, setToasts] = useState([]);
+  
+  const addToast = (message, type = "info", duration = 3000, onUndoCallback = null) => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, message, type, duration, onUndo: onUndoCallback }]);
+  };
+
+  const removeToast = (id) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id));
+  };
+
+  const handleUndoTransaction = async (txId) => {
+    if (!txId) return;
+    // Remove from UI immediately
+    setTransactions(prev => prev.filter(tx => tx.id !== txId));
+    // Delete from database
+    try {
+      await supabase.from('transactions').delete().eq('id', txId);
+    } catch (err) {
+      console.error("Failed to delete transaction:", err);
+      // Optionally re-add to list if deletion failed
+    }
+  };
   
   const { session, loading: authLoading } = useAuth();
   const { 
@@ -246,12 +289,28 @@ export default function App() {
     setMenuOpen(false);
   }, [route]);
 
-  const displayName = useMemo(() => {
-    if (!session?.user) return "User";
-    return session.user.user_metadata?.full_name || session.user.email?.split("@")[0] || "User";
+  useEffect(() => {
+    if (!session?.user) return;
+    const fallbackName = session.user.user_metadata?.full_name || session.user.email?.split("@")[0] || "User";
+    setProfileName(window.localStorage.getItem("spendly.profile.name") || fallbackName);
+    setProfileAvatarSrc(window.localStorage.getItem("spendly.profile.avatar") || "");
   }, [session]);
 
+  const displayName = profileName;
+
   const navigate = (next) => { window.location.hash = `#/${next}`; };
+  const isPolicyRoute = route === "privacy" || route === "terms";
+
+  const updateProfile = (patch) => {
+    if (Object.prototype.hasOwnProperty.call(patch, "name")) {
+      setProfileName(patch.name || "User");
+      window.localStorage.setItem("spendly.profile.name", patch.name || "User");
+    }
+    if (Object.prototype.hasOwnProperty.call(patch, "avatarSrc")) {
+      setProfileAvatarSrc(patch.avatarSrc || "");
+      window.localStorage.setItem("spendly.profile.avatar", patch.avatarSrc || "");
+    }
+  };
 
   const handleFabSaved = (tx) => {
     setTransactions(prev => {
@@ -264,6 +323,12 @@ export default function App() {
     });
   };
 
+  if (isPolicyRoute) {
+    return route === "privacy"
+      ? <PrivacyPolicyScreen navigate={navigate} />
+      : <TermsScreen navigate={navigate} />;
+  }
+
   if (authLoading) return null; // Or a splash screen
   if (!session) return <AuthScreen supabase={supabase} />;
 
@@ -275,6 +340,7 @@ export default function App() {
           totalSpent={totalSpent} transactionCount={transactions.length} topCategory={topCategory}
           onSeeAll={() => navigate("transactions")}
           onInsights={() => navigate("insights")}
+          addToast={addToast}
         />
       )}
       {route === "transactions" && (
@@ -283,20 +349,30 @@ export default function App() {
           activeFilter={activeFilter} setActiveFilter={setActiveFilter}
           customRange={customRange} setCustomRange={setCustomRange}
           onApplyCustom={applyCustom} setTransactions={setTransactions}
+          addToast={addToast}
         />
       )}
       {route === "add" && (
         <AddTransactionScreen 
           session={session} 
           navigate={navigate} 
-          setTransactions={setTransactions} 
+          setTransactions={setTransactions}
+          addToast={addToast}
+          onUndoTransaction={handleUndoTransaction}
         />
       )}
       {route === "insights" && (
         <InsightsScreen totalSpent={totalSpent} byCategory={byCategory} transactions={transactions}/>
       )}
       {route === "profile" && (
-        <ProfileScreen displayName={displayName} session={session}/>
+        <ProfileScreen
+          displayName={displayName}
+          session={session}
+          transactions={transactions}
+          navigate={navigate}
+          avatarSrc={profileAvatarSrc}
+          onProfileChange={updateProfile}
+        />
       )}
       {route === "budgets" && (
         <div className="screen">
@@ -313,13 +389,15 @@ export default function App() {
 
   return (
     <>
+      <ToastContainer toasts={toasts} onDismiss={removeToast} />
+      
       {/* ── Mobile layout ── */}
       <div className="mobile-shell">
         <div className="app-frame">
-          <AppHeader displayName={displayName} onMenuClick={() => setMenuOpen(true)} menuOpen={menuOpen}/>
+          <AppHeader displayName={displayName} avatarSrc={profileAvatarSrc} onMenuClick={() => setMenuOpen(true)} menuOpen={menuOpen}/>
           <main className="app-main">{screenContent}</main>
           <BottomNav route={route} navigate={navigate}/>
-          <FAB session={session} onSaved={handleFabSaved} />
+          <FAB session={session} onSaved={handleFabSaved} addToast={addToast} onUndoTransaction={handleUndoTransaction} />
         </div>
       </div>
 
@@ -334,10 +412,10 @@ export default function App() {
       <div className="desktop-shell">
         <DesktopSidebar route={route} navigate={navigate} displayName={displayName}/>
         <div className="desktop-body">
-          <DesktopHeader route={route} displayName={displayName} activeFilter={activeFilter}/>
+          <DesktopHeader route={route} displayName={displayName} avatarSrc={profileAvatarSrc} activeFilter={activeFilter}/>
           <main className="desktop-main">{screenContent}</main>
         </div>
-        <FAB session={session} onSaved={handleFabSaved} />
+        <FAB session={session} onSaved={handleFabSaved} addToast={addToast} onUndoTransaction={handleUndoTransaction} />
       </div>
     </>
   );

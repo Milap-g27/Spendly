@@ -1,23 +1,73 @@
+import { useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { Icon } from "./Icons";
+import { PersonalInfoCard } from "./profile/PersonalInfoCard";
+import { BudgetCard } from "./profile/BudgetCard";
+import { ChangePasswordModal } from "./profile/ChangePasswordModal";
+import { AboutCard } from "./profile/AboutCard";
 
-export function ProfileScreen({ displayName, session }) {
+function ProfileSection({ label, children }) {
   return (
-    <div className="screen">
+    <section className="profile-section">
+      <p className="profile-section-label">{label}</p>
+      {children}
+    </section>
+  );
+}
+
+export function ProfileScreen({ displayName, session, transactions, navigate, onProfileChange, avatarSrc }) {
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+
+  return (
+    <div className="screen profile-screen">
       <div className="page-title-row">
         <h2 className="page-title">Profile</h2>
       </div>
-      <section className="card profile-card">
-        <div className="profile-avatar-large">{displayName[0]?.toUpperCase() || "N"}</div>
-        <h3 className="profile-name">{displayName}</h3>
-        <p className="profile-email">{session?.user?.email || "demo@spendly.app"}</p>
-        <button
-          className="btn"
-          style={{ marginTop: "1.5rem", background: "none", border: "1px solid var(--red-base)", color: "var(--red-base)", width: "100%", padding: "10px", borderRadius: "8px", fontWeight: "600", cursor: "pointer" }}
-          onClick={() => supabase.auth.signOut()}
-        >
-          Sign Out
-        </button>
-      </section>
+
+      <ProfileSection label="PERSONAL INFO">
+        <PersonalInfoCard
+          displayName={displayName}
+          email={session?.user?.email}
+          avatarSrc={avatarSrc}
+          onAvatarSave={(nextAvatar) => onProfileChange?.({ avatarSrc: nextAvatar })}
+          onNameSave={(nextName) => onProfileChange?.({ name: nextName })}
+        />
+      </ProfileSection>
+
+      <ProfileSection label="BUDGET & LIMITS">
+        <BudgetCard transactions={transactions} />
+      </ProfileSection>
+
+      <ProfileSection label="SECURITY">
+        <div className="profile-section-card">
+          <button type="button" className="profile-list-item profile-action-row is-clickable" onClick={() => setPasswordModalOpen(true)}>
+            <div className="profile-list-item-main">
+              <span className="profile-list-item-icon"><Icon name="lock" size={18} /></span>
+              <div>
+                <p className="profile-list-item-title">Change password</p>
+                <p className="profile-list-item-subtitle">Keep your account secure</p>
+              </div>
+            </div>
+            <div className="profile-list-item-action">
+              <span className="profile-list-item-value">Update</span>
+              <span className="profile-chevron">›</span>
+            </div>
+          </button>
+        </div>
+      </ProfileSection>
+
+      <ProfileSection label="ABOUT">
+        <AboutCard
+          onOpenPrivacy={() => navigate("privacy")}
+          onOpenTerms={() => navigate("terms")}
+        />
+      </ProfileSection>
+
+      <ChangePasswordModal
+        open={passwordModalOpen}
+        onClose={() => setPasswordModalOpen(false)}
+        supabase={supabase}
+      />
     </div>
   );
 }

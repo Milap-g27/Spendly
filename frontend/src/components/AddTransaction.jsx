@@ -163,7 +163,7 @@ function CalendarPopup({ selectedISO, onSelect, onClose }) {
 
 /* ── Main Screen ──────────────────────────────────────────────── */
 
-export function AddTransactionScreen({ session, navigate, setTransactions }) {
+export function AddTransactionScreen({ session, navigate, setTransactions, addToast, onUndoTransaction }) {
   const defaultDateISO = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
 
   const [type, setType]             = useState("expense");
@@ -219,6 +219,17 @@ export function AddTransactionScreen({ session, navigate, setTransactions }) {
           });
         });
       }
+      
+      // Show success toast with undo
+      if (addToast) {
+        addToast(
+          `✓ ${type === "income" ? "Income" : "Expense"} of ₹${Number(amount).toFixed(2)} added`,
+          "success",
+          5000,
+          () => onUndoTransaction?.(saved.id)
+        );
+      }
+      
       navigate("dashboard");
     } catch (err) {
       setError("Save failed: " + err.message);

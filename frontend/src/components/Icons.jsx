@@ -39,6 +39,24 @@ export function Icon({ name, size = 22 }) {
       return <svg {...props} fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><path d="M15 17H9m3 4a1 1 0 0 0 1-1h-2a1 1 0 0 0 1 1zM5.07 17A8 8 0 0 1 4 13V9a8 8 0 1 1 16 0v4a8 8 0 0 1-1.07 4H5.07z"/></svg>;
     case "chevron-down":
       return <svg {...props} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6"/></svg>;
+    case "chevron-right":
+      return <svg {...props} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6"/></svg>;
+    case "camera":
+      return <svg {...props} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 7h3l2-3h6l2 3h3v12H4z"/><circle cx="12" cy="13" r="3.25"/></svg>;
+    case "mail":
+      return <svg {...props} fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M4 6h16v12H4z"/><path d="m4 7 8 6 8-6"/></svg>;
+    case "shield":
+      return <svg {...props} fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3 19 5.5V11c0 4.3-2.8 7.7-7 10-4.2-2.3-7-5.7-7-10V5.5L12 3z"/></svg>;
+    case "lock":
+      return <svg {...props} fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V8a4 4 0 0 1 8 0v2"/></svg>;
+    case "info":
+      return <svg {...props} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 10.5v6"/><path d="M12 7.5h.01"/></svg>;
+    case "document":
+      return <svg {...props} fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v5h5"/><path d="M9 11h6M9 15h6"/></svg>;
+    case "logout":
+      return <svg {...props} fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M10 17H6a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h4"/><path d="M14 7l5 5-5 5"/><path d="M19 12H9"/></svg>;
+    case "close":
+      return <svg {...props} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12"/><path d="M18 6 6 18"/></svg>;
     default:
       return null;
   }

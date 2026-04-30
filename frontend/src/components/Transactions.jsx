@@ -208,7 +208,7 @@ function TransactionRow({ item, selectMode, isSelected, onToggleSelect, onLongPr
 }
 
 /* ── Main Transactions Screen ─────────────────────────────────── */
-export function TransactionsScreen({ transactions, search, setSearch, activeFilter, setActiveFilter, customRange, setCustomRange, onApplyCustom, setTransactions }) {
+export function TransactionsScreen({ transactions, search, setSearch, activeFilter, setActiveFilter, customRange, setCustomRange, onApplyCustom, setTransactions, addToast }) {
   const [typeFilter, setTypeFilter] = useState("All");
 
   /* Multiselect / Delete State */
@@ -237,6 +237,12 @@ export function TransactionsScreen({ transactions, search, setSearch, activeFilt
     setPendingDelete(itemsToDelete);
     setSelectMode(false);
     setSelectedIds(new Set());
+    
+    // Show delete notification
+    const count = itemsToDelete.length;
+    if (addToast) {
+      addToast(`${count} transaction${count > 1 ? 's' : ''} deleted`, "error", 5000);
+    }
     
     // Start 5s countdown
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);

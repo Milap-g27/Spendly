@@ -34,6 +34,8 @@ export function getRouteFromHash() {
   if (clean.startsWith("transactions")) return "transactions";
   if (clean.startsWith("insights")) return "insights";
   if (clean.startsWith("profile")) return "profile";
+  if (clean.startsWith("privacy")) return "privacy";
+  if (clean.startsWith("terms")) return "terms";
   if (clean.startsWith("add")) return "add";
   return "dashboard";
 }

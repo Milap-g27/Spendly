@@ -1,7 +1,7 @@
 import { Icon } from "./Icons";
 import { NAV_TABS } from "../lib/constants";
 
-export function AppHeader({ displayName, onMenuClick, menuOpen }) {
+export function AppHeader({ displayName, avatarSrc, onMenuClick, menuOpen }) {
   return (
     <header className="app-header">
       <button
@@ -16,7 +16,9 @@ export function AppHeader({ displayName, onMenuClick, menuOpen }) {
         <div className="logo-s">S</div>
         <span className="logo-text">Spendly</span>
       </div>
-      <div className="header-avatar">{displayName[0]?.toUpperCase() || "N"}</div>
+      <div className="header-avatar">
+        {avatarSrc ? <img src={avatarSrc} alt="Profile avatar" /> : (displayName[0]?.toUpperCase() || "N")}
+      </div>
     </header>
   );
 }
@@ -61,11 +63,15 @@ export function DesktopSidebar({ route, navigate, displayName }) {
   );
 }
 
-export function DesktopHeader({ route, displayName, activeFilter }) {
+export function DesktopHeader({ route, displayName, avatarSrc, activeFilter }) {
   const current = NAV_TABS.find((t) => t.value === route);
+  const routeTitles = {
+    privacy: "Privacy Policy",
+    terms: "Terms of Service",
+  };
   return (
     <header className="desktop-header">
-      <h1 className="desktop-header-title">{current?.label || "Dashboard"}</h1>
+      <h1 className="desktop-header-title">{current?.label || routeTitles[route] || "Dashboard"}</h1>
       <div className="desktop-header-right">
         <div className="desktop-date-pill">
           <Icon name="calendar" size={15}/>
@@ -75,7 +81,9 @@ export function DesktopHeader({ route, displayName, activeFilter }) {
           <Icon name="bell" size={18}/>
         </button>
         <button className="desktop-user-pill">
-          <div className="desktop-user-avatar">{displayName[0]?.toUpperCase() || "N"}</div>
+          <div className="desktop-user-avatar">
+            {avatarSrc ? <img src={avatarSrc} alt="Profile avatar" /> : (displayName[0]?.toUpperCase() || "N")}
+          </div>
           <span className="desktop-user-name">{displayName}</span>
           <Icon name="chevron-down" size={14}/>
         </button>
