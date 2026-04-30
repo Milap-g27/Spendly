@@ -1034,3 +1034,578 @@ input { font-family: inherit; }
   border-top: 1px solid var(--border);
 }
 
+/* ── Manual Add Transaction Form ───────────────────────────── */
+
+.page-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--muted);
+  margin-bottom: 20px;
+}
+
+.at-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.at-form-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.at-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: #EDEEF2;
+  border-radius: 12px;
+  height: 56px;
+  transition: box-shadow 0.2s, border-color 0.2s;
+  border: 1px solid transparent;
+}
+
+.at-input-wrapper:focus-within {
+  border-color: var(--accent);
+  background: #ffffff;
+}
+
+.at-icon-left {
+  position: absolute;
+  left: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.at-icon-right {
+  position: absolute;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748B;
+  pointer-events: none;
+}
+
+.at-input {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: transparent;
+  padding: 0 16px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+  outline: none;
+  font-family: inherit;
+}
+
+.at-input.has-left-icon {
+  padding-left: 54px;
+}
+
+.at-input.has-right-icon {
+  padding-right: 48px;
+}
+
+/* native select hides appearance but covers input */
+.at-select {
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: transparent;
+  padding: 0 48px 0 54px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+  outline: none;
+  font-family: inherit;
+}
+.at-select.no-left-icon {
+  padding-left: 16px;
+}
+
+.at-textarea {
+  width: 100%;
+  min-height: 100px;
+  background: #EDEEF2;
+  border-radius: 12px;
+  padding: 16px;
+  font-size: 15px;
+  font-family: inherit;
+  font-weight: 500;
+  color: var(--text);
+  outline: none;
+  resize: vertical;
+  border: 1px solid transparent;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.at-textarea:focus {
+  border-color: var(--accent);
+  background: #ffffff;
+}
+
+.at-submit-btn {
+  width: 100%;
+  background: var(--accent);
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  height: 56px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, opacity 0.2s;
+}
+
+.at-submit-btn:hover {
+  opacity: 0.9;
+}
+.at-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.icon-circle-bg {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+.icon-expense {
+  background: var(--accent); /* blue */
+}
+.icon-income {
+  background: #22c55e; /* green */
+}
+.icon-rupee {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* ── Amount + Date side-by-side row ────────────────────────── */
+
+.at-side-by-side {
+  display: flex;
+  gap: 12px;
+}
+
+.at-half {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Date field (read-only, click to open calendar) ────────── */
+
+.at-date-field {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.at-date-display {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+  padding: 0 44px 0 16px;
+  line-height: 56px;
+  user-select: none;
+  letter-spacing: 0.5px;
+}
+
+/* Calendar icon button (right side of date field) */
+.at-date-cal-btn {
+  position: absolute;
+  right: 12px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+.at-date-cal-btn:hover {
+  background: var(--accent-light);
+}
+
+/* ── Custom Calendar Popup ──────────────────────────────────── */
+
+.cal-popup {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: 280px;
+  background: var(--card);
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  border: 1px solid var(--border);
+  z-index: 200;
+  padding: 16px;
+  animation: dropdownFadeIn 0.15s ease-out;
+}
+
+/* On small screens, anchor to the left edge of the card instead */
+@media (max-width: 480px) {
+  .cal-popup {
+    right: auto;
+    left: -100%;
+    width: calc(100vw - 48px);
+    max-width: 320px;
+  }
+}
+
+.cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.cal-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.cal-nav {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: var(--accent);
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+.cal-nav:hover {
+  background: var(--accent-light);
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  text-align: center;
+}
+
+.cal-day-labels span {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  padding: 4px 0;
+  letter-spacing: 0.3px;
+}
+
+.cal-days {
+  margin-top: 4px;
+}
+
+.cal-day {
+  background: none;
+  border: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cal-day:hover {
+  background: var(--bg);
+}
+
+.cal-day-today {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.cal-day-selected {
+  background: var(--accent) !important;
+  color: #fff !important;
+  font-weight: 700;
+}
+
+.cal-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.cal-footer-btn {
+  background: none;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--accent);
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+.cal-footer-btn:hover {
+  background: var(--accent-light);
+}
+
+
+/* ── Swipe Delete ────────────────────────────────────────────── */
+.swipeable-container {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  background-color: var(--card); /* Needs to match bg so there's no red flash if not swiping */
+}
+
+.swipeable-actions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 100px; /* Space behind */
+  background-color: #ef4444; /* Red trash bg */
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  border-radius: 12px;
+  padding-right: 24px;
+}
+
+.swipeable-delete-btn {
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.swipeable-content {
+  position: relative;
+  background-color: var(--card);
+  border-radius: 12px;
+  z-index: 2;
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  will-change: transform;
+}
+
+
+/* ── Multiselect Row Checkbox ────────────────────────────────── */
+.tx-checkbox-container {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: slideInLeft 0.2s ease-out;
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.tx-checkbox {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--card);
+  transition: all 0.2s ease;
+}
+
+.tx-checkbox.checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.transaction-row.selected {
+  background-color: var(--accent-light);
+}
+
+/* ── Selection Top Bar ───────────────────────────────────────── */
+.selection-topbar {
+  padding: 16px 20px;
+  background-color: var(--card);
+  border-bottom: 1px solid var(--border);
+  animation: slideDown 0.2s ease-out;
+}
+
+.selection-topbar-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.selection-count {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.selection-cancel-btn {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Floating Delete Selected Button ──────────────────────────── */
+.floating-delete-container {
+  position: fixed;
+  bottom: 80px; 
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  z-index: 50;
+  pointer-events: none; /* Let clicks pass through empty space */
+}
+
+.floating-delete-btn {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #ef4444; /* Red */
+  color: #fff;
+  font-weight: 600;
+  font-size: 15px;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 30px;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+  cursor: pointer;
+  transition: transform 0.2s, opacity 0.2s;
+  animation: popUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.floating-delete-btn:disabled {
+  background-color: var(--muted);
+  box-shadow: none;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.floating-delete-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+@keyframes popUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.9); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── Undo Snackbar ───────────────────────────────────────────── */
+.undo-snackbar {
+  position: fixed;
+  bottom: 80px;
+  left: 16px;
+  right: 16px;
+  background-color: #1f2937; /* Dark grayish-blue */
+  border-radius: 8px;
+  z-index: 100;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: slideUpSnack 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  max-width: 500px;
+  margin: 0 auto;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+.undo-snackbar-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.undo-btn {
+  background: none;
+  border: none;
+  color: #60a5fa; /* Light blue accent */
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 8px;
+  margin-right: -8px; /* Offset padding */
+  border-radius: 4px;
+}
+
+.undo-btn:hover {
+  background: rgba(96, 165, 250, 0.1);
+}
+
+.undo-progress-bar {
+  height: 4px;
+  background-color: rgba(255, 255, 255, 0.1);
+  width: 100%;
+}
+
+.undo-progress-fill {
+  height: 100%;
+  background-color: #60a5fa;
+  /* Animate width from 100% to 0% linearly over 5s */
+  animation: drainBar 5s linear forwards;
+}
+
+@keyframes drainBar {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+@keyframes slideUpSnack {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}

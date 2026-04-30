@@ -29,12 +29,14 @@ function FAB({ session, onSaved }) {
   const [status, setStatus]   = useState("idle"); // idle|parsing|ready|saving|done
   const [error, setError]     = useState("");
 
-  // Compute today's date in IST (UTC+05:30) to avoid UTC date mismatch
-  const today = (() => {
-    const now = new Date();
-    const ist = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
-    return ist.toISOString().slice(0, 10);
-  })();
+  const getISTDate = (offsetDays = 0) => {
+    const d = new Date();
+    if (offsetDays !== 0) d.setDate(d.getDate() + offsetDays);
+    return d.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+  };
+  
+  const today = getISTDate(0);
+  const yesterdayStr = getISTDate(-1);
 
   const close = () => {
     setOpen(false);
@@ -166,9 +168,6 @@ function FAB({ session, onSaved }) {
                     <span className="fab-meta-chip">{
                       (() => {
                         if (!parsed.date || parsed.date === today) return "📅 Today";
-                        const y = new Date(new Date().getTime() + (5.5 * 60 * 60 * 1000));
-                        y.setDate(y.getDate() - 1);
-                        const yesterdayStr = y.toISOString().slice(0, 10);
                         if (parsed.date === yesterdayStr) return "📅 Yesterday";
                         const d = new Date(parsed.date + "T00:00:00");
                         return "📅 " + d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
@@ -270,7 +269,7 @@ export default function App() {
           transactions={transactions} search={search} setSearch={setSearch}
           activeFilter={activeFilter} setActiveFilter={setActiveFilter}
           customRange={customRange} setCustomRange={setCustomRange}
-          onApplyCustom={applyCustom}
+          onApplyCustom={applyCustom} setTransactions={setTransactions}
         />
       )}
       {route === "add" && (

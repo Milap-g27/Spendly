@@ -1,91 +1,229 @@
-import { useState } from "react";
-import { EXAMPLE_PHRASES } from "../lib/constants";
-import { formatCurrency, formatShortDate, getCategoryMeta, edgeFetch } from "../lib/utils";
+import { useState, useRef, useEffect } from "react";
+import { Icon } from "./Icons";
+import { edgeFetch } from "../lib/utils";
 
-export function AddTransactionScreen({ session, navigate, setTransactions }) {
-  const [inputText, setInputText] = useState("");
-  const [parsed, setParsed] = useState(null);
-  const [addStatus, setAddStatus] = useState("idle"); // idle | parsing | ready | saving | done
-  const [addError, setAddError] = useState("");
+/* ── Inline SVG Icons ─────────────────────────────────────────── */
 
-  const handleParse = async () => {
-    const text = inputText.trim();
-    if (!text) { setAddError("Please describe your transaction."); return; }
-    if (text.length > 200) { setAddError("Transaction description is too long (max 200 characters)."); return; }
-    
-    setAddStatus("parsing"); setAddError(""); setParsed(null);
+const ArrowDownIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="12" y1="5" x2="12" y2="19" />
+    <polyline points="19 12 12 19 5 12" />
+  </svg>
+);
 
-    try {
-      if (!session) throw new Error("Not logged in");
-      
-      const today = (() => {
-        const now = new Date();
-        const ist = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
-        return ist.toISOString().slice(0, 10);
-      })();
-      const result = await edgeFetch("/parse", { 
-        method: "POST", 
-        body: { text, today }, 
-        token: session.access_token 
-      });
-      
-      setParsed(result);
-      setAddStatus("ready");
-    } catch (e) {
-      setAddError(e.message || "Could not parse. Try rephrasing.");
-      setAddStatus("idle");
-    }
+const ArrowUpIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="12" y1="19" x2="12" y2="5" />
+    <polyline points="5 12 12 5 19 12" />
+  </svg>
+);
+
+const TagIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2B52F5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+    <line x1="7" y1="7" x2="7.01" y2="7" />
+  </svg>
+);
+
+/* ── Custom Select Dropdown ───────────────────────────────────── */
+
+function CustomSelect({ value, options, placeholder, onChange }) {
+  const [open, setOpen] = useState(false);
+  const selectedOpt = options.find(o => o.value === value);
+
+  return (
+    <>
+      <div
+        className="at-input has-left-icon has-right-icon"
+        onClick={() => setOpen(!open)}
+        style={{
+          display: "flex", alignItems: "center", cursor: "pointer",
+          color: selectedOpt ? "var(--text)" : "var(--muted)",
+        }}
+      >
+        {selectedOpt ? selectedOpt.label : placeholder}
+      </div>
+
+      {open && (
+        <>
+          <div style={{ position: "fixed", inset: 0, zIndex: 90 }} onClick={() => setOpen(false)} />
+          <div style={{
+            position: "absolute", top: "calc(100% + 4px)", left: 0, width: "100%",
+            background: "var(--card)", borderRadius: "12px",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+            border: "1px solid var(--border)", zIndex: 100,
+            overflow: "hidden", animation: "dropdownFadeIn 0.15s ease-out",
+            maxHeight: "240px", overflowY: "auto",
+          }}>
+            {options.map(opt => (
+              <div
+                key={opt.value}
+                onClick={() => { onChange(opt.value); setOpen(false); }}
+                style={{
+                  padding: "12px 16px", fontSize: "15px", cursor: "pointer",
+                  color: value === opt.value ? "var(--accent)" : "var(--text)",
+                  background: value === opt.value ? "var(--accent-light)" : "transparent",
+                  fontWeight: value === opt.value ? "600" : "500",
+                  transition: "background 0.15s",
+                }}
+                onMouseEnter={e => { if (value !== opt.value) e.target.style.background = "var(--bg)"; }}
+                onMouseLeave={e => { if (value !== opt.value) e.target.style.background = "transparent"; }}
+              >
+                {opt.label}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </>
+  );
+}
+
+/* ── Custom Calendar Popup ────────────────────────────────────── */
+
+const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const DAY_LABELS = ["Mo","Tu","We","Th","Fr","Sa","Su"];
+
+function CalendarPopup({ selectedISO, onSelect, onClose }) {
+  const [viewYear, setViewYear] = useState(() => parseInt(selectedISO.slice(0, 4)));
+  const [viewMonth, setViewMonth] = useState(() => parseInt(selectedISO.slice(5, 7)) - 1);
+  const ref = useRef(null);
+
+  /* Close on outside click */
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) onClose(); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [onClose]);
+
+  const prevMonth = () => {
+    if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); }
+    else setViewMonth(m => m - 1);
+  };
+  const nextMonth = () => {
+    if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); }
+    else setViewMonth(m => m + 1);
   };
 
-  const handleSave = async () => {
-    if (!parsed) return;
-    setAddStatus("saving"); setAddError("");
+  /* Build calendar grid */
+  const firstDay = new Date(viewYear, viewMonth, 1);
+  const startDow = (firstDay.getDay() + 6) % 7; // Mon=0
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
 
+  const cells = [];
+  for (let i = 0; i < startDow; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+
+  const todayISO = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+
+  const pad = n => String(n).padStart(2, "0");
+
+  return (
+    <div className="cal-popup" ref={ref}>
+      {/* Header */}
+      <div className="cal-header">
+        <button type="button" className="cal-nav" onClick={prevMonth}>‹</button>
+        <span className="cal-title">{MONTH_NAMES[viewMonth]} {viewYear}</span>
+        <button type="button" className="cal-nav" onClick={nextMonth}>›</button>
+      </div>
+
+      {/* Day labels */}
+      <div className="cal-grid cal-day-labels">
+        {DAY_LABELS.map(d => <span key={d}>{d}</span>)}
+      </div>
+
+      {/* Day cells */}
+      <div className="cal-grid cal-days">
+        {cells.map((day, i) => {
+          if (day === null) return <span key={`e${i}`} />;
+          const iso = `${viewYear}-${pad(viewMonth + 1)}-${pad(day)}`;
+          const isSelected = iso === selectedISO;
+          const isToday = iso === todayISO;
+          return (
+            <button
+              key={i}
+              type="button"
+              className={`cal-day ${isSelected ? "cal-day-selected" : ""} ${isToday && !isSelected ? "cal-day-today" : ""}`}
+              onClick={() => { onSelect(iso); onClose(); }}
+            >
+              {day}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Footer */}
+      <div className="cal-footer">
+        <button type="button" className="cal-footer-btn" onClick={() => { onSelect(""); onClose(); }}>Clear</button>
+        <button type="button" className="cal-footer-btn cal-footer-today" onClick={() => { onSelect(todayISO); onClose(); }}>Today</button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Main Screen ──────────────────────────────────────────────── */
+
+export function AddTransactionScreen({ session, navigate, setTransactions }) {
+  const defaultDateISO = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+
+  const [type, setType]             = useState("expense");
+  const [category, setCategory]     = useState("");
+  const [amount, setAmount]         = useState("");
+  const [description, setDescription] = useState("");
+  const [dateISO, setDateISO]       = useState(defaultDateISO);
+  const [calOpen, setCalOpen]       = useState(false);
+  const [status, setStatus]         = useState("idle");
+  const [error, setError]           = useState("");
+
+  const expenseCategories = ["Food", "Transport", "Shopping", "Entertainment", "Health", "Bills & Utilities", "Education", "Others"];
+  const incomeCategories  = ["Salary", "Freelance", "Investment", "Gift", "Others"];
+  const currentCategories = type === "expense" ? expenseCategories : incomeCategories;
+
+  /* Display date as YYYY/MM/DD */
+  const displayDate = dateISO ? dateISO.replace(/-/g, "/") : "Select date";
+
+  /* ── Submit ──────────────────────────────────────────────────── */
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    if (!category)                                       { setError("Please select a category.");                return; }
+    if (!amount || isNaN(amount) || Number(amount) <= 0) { setError("Please enter a valid amount greater than 0."); return; }
+    if (!description.trim())                             { setError("Please enter a description.");              return; }
+    if (!dateISO)                                        { setError("Please select a date.");                    return; }
+
+    setStatus("saving");
     try {
       if (!session) throw new Error("Not logged in");
 
-      const today = (() => {
-        const now = new Date();
-        const ist = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
-        return ist.toISOString().slice(0, 10);
-      })();
-      
       const payload = {
-        raw_input:        inputText,
-        type:             parsed.type,
-        amount:           parsed.amount,
-        category:         parsed.category,
-        description:      parsed.description,
-        transaction_date: parsed.date || today,
+        raw_input:        description,
+        type,
+        amount:           Number(amount),
+        category:         category === "Others" ? "Other" : category === "Bills & Utilities" ? "Bills" : category,
+        description:      description.trim(),
+        transaction_date: dateISO,
       };
 
       const saved = await edgeFetch("/transactions", {
-        method: "POST",
-        body: payload,
-        token: session.access_token
+        method: "POST", body: payload, token: session.access_token,
       });
 
-      setAddStatus("done");
+      setStatus("done");
       if (setTransactions) {
         setTransactions(prev => {
           const newList = [saved, ...prev];
           return newList.sort((a, b) => {
-            const timeDiff = new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime();
-            if (timeDiff !== 0) return timeDiff;
-            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+            const td = new Date(b.transaction_date) - new Date(a.transaction_date);
+            return td !== 0 ? td : new Date(b.created_at) - new Date(a.created_at);
           });
         });
       }
       navigate("dashboard");
-      reset();
-    } catch (e) {
-      setAddError("Save failed: " + e.message);
-      setAddStatus("ready");
+    } catch (err) {
+      setError("Save failed: " + err.message);
+      setStatus("idle");
     }
-  };
-
-  const reset = () => {
-    setInputText(""); setParsed(null); setAddStatus("idle"); setAddError("");
   };
 
   if (!session) {
@@ -96,136 +234,118 @@ export function AddTransactionScreen({ session, navigate, setTransactions }) {
     );
   }
 
-  const catMeta = parsed ? getCategoryMeta(parsed.category) : null;
-  const isIncome = parsed?.type === "income";
-
   return (
     <div className="screen">
-      {/* ── Input card ──────────────────────────────────────────────────────── */}
       <div className="card">
-        <p className="card-label">Describe your transaction</p>
-        <textarea
-          className="nlp-textarea"
-          value={inputText}
-          onChange={(e) => { setInputText(e.target.value); setAddError(""); }}
-          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleParse(); } }}
-          placeholder="Add a transaction "
-        />
+        <p className="page-title">ADD TRANSACTION</p>
 
-      </div>
+        {error && (
+          <div style={{
+            background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 12,
+            padding: "10px 14px", fontSize: 13, color: "#991b1b", marginBottom: 16,
+          }}>
+            ⚠ {error}
+          </div>
+        )}
 
-      {/* ── Error ────────────────────────────────────────────────────────────── */}
-      {addError && (
-        <div style={{
-          background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 12,
-          padding: "10px 14px", fontSize: 13, color: "#991b1b",
-        }}>
-          ⚠ {addError}
-        </div>
-      )}
+        <form onSubmit={handleSubmit}>
 
-      {/* ── Parse button ─────────────────────────────────────────────────────── */}
-      {!parsed && (
-        <button
-          onClick={handleParse}
-          disabled={addStatus === "parsing"}
-          style={{
-            width: "100%", padding: 14, borderRadius: 12, border: "none",
-            background: "#2563eb", color: "#fff", fontFamily: "inherit",
-            fontSize: 15, fontWeight: 600, cursor: "pointer", display: "flex",
-            alignItems: "center", justifyContent: "center", gap: 8,
-            opacity: addStatus === "parsing" ? .7 : 1,
-          }}
-        >
-          {addStatus === "parsing" ? "Parsing with AI…" : "Parse with AI →"}
-        </button>
-      )}
-
-      {/* ── Parsed preview ───────────────────────────────────────────────────── */}
-      {parsed && addStatus !== "parsing" && (
-        <>
-          <div className={`card ${isIncome ? 'preview-card-income' : 'preview-card-expense'}`}>
-            {/* Header */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-              <span className={`type-badge ${isIncome ? 'type-badge-income' : 'type-badge-expense'}`}>
-                {isIncome ? "↑ Income" : "↓ Expense"}
-              </span>
-              <span style={{
-                fontSize: 11, color: "var(--muted)", background: "var(--bg)",
-                padding: "3px 8px", borderRadius: 999, border: "1px solid var(--border)",
-              }}>
-                AI parsed
-              </span>
-            </div>
-
-            {/* Amount */}
-            <div className="parsed-amount">
-              {formatCurrency(parsed.amount)}
-            </div>
-
-            {/* Fields grid */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
-              <div>
-                <p style={{ fontSize: 11, color: "var(--muted)", marginBottom: 4, fontWeight: 500 }}>CATEGORY</p>
-                <span style={{
-                  display: "inline-flex", padding: "4px 10px", borderRadius: 999,
-                  fontSize: 13, fontWeight: 600, background: catMeta.chip, color: catMeta.color,
-                }}>
-                  {parsed.category}
-                </span>
+          {/* ── Transaction Type ─────────────────────── */}
+          <div className="at-form-group">
+            <label className="at-form-label">Transaction type</label>
+            <div className="at-input-wrapper">
+              <div className="at-icon-left">
+                <div className={`icon-circle-bg ${type === "expense" ? "icon-expense" : "icon-income"}`}>
+                  {type === "expense" ? <ArrowDownIcon /> : <ArrowUpIcon />}
+                </div>
               </div>
-              <div>
-                <p style={{ fontSize: 11, color: "var(--muted)", marginBottom: 4, fontWeight: 500 }}>DATE</p>
-                <p style={{ fontSize: 14, fontWeight: 600, color: "var(--text)" }}>{
-                  (() => {
-                    const todayStr = (() => {
-                      const now = new Date();
-                      const ist = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
-                      return ist.toISOString().slice(0, 10);
-                    })();
-                    if (!parsed.date || parsed.date === todayStr) return "Today";
-                    
-                    const y = new Date(new Date().getTime() + (5.5 * 60 * 60 * 1000));
-                    y.setDate(y.getDate() - 1);
-                    const yStr = y.toISOString().slice(0, 10);
-                    
-                    if (parsed.date === yStr) return "Yesterday";
-                    return formatShortDate(parsed.date);
-                  })()
-                }</p>
-              </div>
-              <div style={{ gridColumn: "1 / -1" }}>
-                <p style={{ fontSize: 11, color: "var(--muted)", marginBottom: 4, fontWeight: 500 }}>DESCRIPTION</p>
-                <p style={{ fontSize: 14, fontWeight: 600, color: "var(--text)" }}>{parsed.description}</p>
-              </div>
-            </div>
-
-            {/* Raw input */}
-            <div className="raw-quote">
-              "{inputText}"
+              <CustomSelect
+                value={type}
+                options={[
+                  { value: "expense", label: "Expense" },
+                  { value: "income",  label: "Income"  },
+                ]}
+                onChange={val => { setType(val); setCategory(""); }}
+              />
+              <div className="at-icon-right"><Icon name="chevron-down" size={18} /></div>
             </div>
           </div>
 
-          {/* Save button */}
-          <button
-            className={`btn-save ${isIncome ? 'btn-save-income' : 'btn-save-expense'}`}
-            onClick={handleSave}
-            disabled={addStatus === "saving"}
-            style={{ opacity: addStatus === "saving" ? .7 : 1 }}
-          >
-            {addStatus === "saving" ? "Saving…" : `Save ${isIncome ? "Income" : "Expense"} →`}
-          </button>
+          {/* ── Category ─────────────────────────────── */}
+          <div className="at-form-group">
+            <label className="at-form-label">Category</label>
+            <div className="at-input-wrapper">
+              <div className="at-icon-left"><TagIcon /></div>
+              <CustomSelect
+                value={category}
+                placeholder="Select category"
+                options={currentCategories.map(c => ({ value: c, label: c }))}
+                onChange={setCategory}
+              />
+              <div className="at-icon-right"><Icon name="chevron-down" size={18} /></div>
+            </div>
+          </div>
 
-          {/* Clear */}
-          <button onClick={reset} style={{
-            width: "100%", padding: 10, borderRadius: 12,
-            border: "1px solid var(--border)", background: "transparent",
-            color: "var(--muted)", fontFamily: "inherit", fontSize: 14, cursor: "pointer",
-          }}>
-            Clear
+          {/* ── Amount + Date side by side ────────────── */}
+          <div className="at-side-by-side">
+            {/* Amount */}
+            <div className="at-form-group at-half">
+              <label className="at-form-label">Amount</label>
+              <div className="at-input-wrapper">
+                <div className="at-icon-left icon-rupee">₹</div>
+                <input
+                  type="number" step="0.01"
+                  className="at-input has-left-icon"
+                  placeholder="0.00"
+                  value={amount}
+                  onChange={e => setAmount(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Transaction Date — click to open custom calendar */}
+            <div className="at-form-group at-half" style={{ position: "relative" }}>
+              <label className="at-form-label">Transaction date</label>
+              <div className="at-input-wrapper at-date-field" onClick={() => setCalOpen(!calOpen)}>
+                <span className="at-date-display">{displayDate}</span>
+                <button
+                  type="button"
+                  className="at-date-cal-btn"
+                  onClick={e => { e.stopPropagation(); setCalOpen(!calOpen); }}
+                  aria-label="Open calendar"
+                >
+                  <Icon name="calendar" size={20} />
+                </button>
+              </div>
+
+              {/* Custom calendar popup — renders INSIDE the app */}
+              {calOpen && (
+                <CalendarPopup
+                  selectedISO={dateISO}
+                  onSelect={setDateISO}
+                  onClose={() => setCalOpen(false)}
+                />
+              )}
+            </div>
+          </div>
+
+          {/* ── Description ──────────────────────────── */}
+          <div className="at-form-group">
+            <label className="at-form-label">Description</label>
+            <textarea
+              className="at-textarea"
+              placeholder="Enter description"
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+            />
+          </div>
+
+          {/* ── Submit ────────────────────────────────── */}
+          <button type="submit" className="at-submit-btn" disabled={status === "saving"}>
+            {status === "saving" ? "Saving..." : "Add Transaction"}
           </button>
-        </>
-      )}
+        </form>
+      </div>
     </div>
   );
 }
