@@ -280,7 +280,7 @@ export default function App() {
         />
       )}
       {route === "insights" && (
-        <InsightsScreen totalSpent={totalSpent} byCategory={byCategory}/>
+        <InsightsScreen totalSpent={totalSpent} byCategory={byCategory} transactions={transactions}/>
       )}
       {route === "profile" && (
         <ProfileScreen displayName={displayName} session={session}/>

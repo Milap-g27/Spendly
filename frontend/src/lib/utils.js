@@ -88,3 +88,24 @@ export function getDateRangeLimits(filterType, customRange = { from: "", to: "" 
       return { from: null, to: null };
   }
 }
+
+export function exportToCSV(transactions) {
+  if (!transactions || !transactions.length) return;
+  const headers = ["Date", "Type", "Category", "Description", "Amount"];
+  const rows = transactions.map(t => {
+    const d = new Date(`${t.transaction_date}T00:00:00`);
+    const dateStr = d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+    const amount = Number(t.amount).toFixed(2);
+    const desc = (t.description || "").replace(/,/g, " "); // Basic esc
+    return [dateStr, t.type, t.category, desc, amount];
+  });
+  const csvContent = [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `spendly_report_${new Date().toISOString().split("T")[0]}.csv`;
+  link.style.display = "none";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}

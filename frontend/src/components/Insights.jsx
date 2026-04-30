@@ -1,7 +1,7 @@
-import { formatCurrency, buildDonutGradient } from "../lib/utils";
+import { formatCurrency, buildDonutGradient, exportToCSV } from "../lib/utils";
 import { Icon } from "./Icons";
 
-export function InsightsScreen({ totalSpent, byCategory }) {
+export function InsightsScreen({ totalSpent, byCategory, transactions }) {
   const gradient = buildDonutGradient(byCategory);
 
   return (
@@ -11,7 +11,7 @@ export function InsightsScreen({ totalSpent, byCategory }) {
           <h2 className="page-title">Spending Insights</h2>
           <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 4 }}>Track and analyze your spending habits</p>
         </div>
-        <button className="export-btn">
+        <button className="export-btn" onClick={() => exportToCSV(transactions)}>
           <Icon name="download" size={15}/>
           Export Report
         </button>
