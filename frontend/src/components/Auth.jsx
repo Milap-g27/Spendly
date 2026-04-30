@@ -16,8 +16,14 @@ function LoginView({ email, setEmail, password, setPassword, onSubmit, toggleMod
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="nitish@example.com" />
         </div>
         <div className="form-group-ref">
-          <label>Password</label>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="Your password" />
+          <input 
+            type="password" 
+            value={password} 
+            onChange={(e) => setPassword(e.target.value)} 
+            required 
+            minLength={6}
+            placeholder="Choose a strong password (min 6 chars)" 
+          />
         </div>
         <button type="submit" disabled={loading} className="auth-submit-btn-ref">
           {loading ? "Signing in..." : "Sign in"}
@@ -47,8 +53,14 @@ function RegisterView({ email, setEmail, password, setPassword, onSubmit, toggle
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="nitish@example.com" />
         </div>
         <div className="form-group-ref">
-          <label>Password</label>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="Choose a strong password" />
+          <input 
+            type="password" 
+            value={password} 
+            onChange={(e) => setPassword(e.target.value)} 
+            required 
+            minLength={6}
+            placeholder="Choose a strong password (min 6 chars)" 
+          />
         </div>
         <button type="submit" disabled={loading} className="auth-submit-btn-ref">
           {loading ? "Creating account..." : "Get started"}
