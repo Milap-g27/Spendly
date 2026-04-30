@@ -1,10 +1,17 @@
 import { Icon } from "./Icons";
 import { NAV_TABS } from "../lib/constants";
 
-export function AppHeader({ displayName }) {
+export function AppHeader({ displayName, onMenuClick, menuOpen }) {
   return (
     <header className="app-header">
-      <button className="header-icon-btn" aria-label="Menu"><Icon name="menu" size={24}/></button>
+      <button
+        className="header-icon-btn md:hidden"
+        aria-label="Menu"
+        aria-expanded={menuOpen}
+        onClick={onMenuClick}
+      >
+        <Icon name="menu" size={24}/>
+      </button>
       <div className="header-logo">
         <div className="logo-s">S</div>
         <span className="logo-text">Spendly</span>

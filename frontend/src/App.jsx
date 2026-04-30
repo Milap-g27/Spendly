@@ -6,6 +6,7 @@ import { useAuth } from "./hooks/useAuth";
 import { useTransactions } from "./hooks/useTransactions";
 
 import { AppHeader, BottomNav, DesktopSidebar, DesktopHeader } from "./components/Layout";
+import { MobileDrawer } from "./components/MobileDrawer";
 import { DashboardScreen } from "./components/Dashboard";
 import { TransactionsScreen } from "./components/Transactions";
 import { InsightsScreen } from "./components/Insights";
@@ -205,6 +206,7 @@ export default function App() {
   const [route, setRoute] = useState(getRouteFromHash());
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState(filterTabs[0]);
+  const [menuOpen, setMenuOpen] = useState(false);
   
   const { session, loading: authLoading } = useAuth();
   const { 
@@ -232,6 +234,17 @@ export default function App() {
     window.addEventListener("hashchange", handleChange);
     return () => window.removeEventListener("hashchange", handleChange);
   }, []);
+
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [menuOpen]);
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [route]);
 
   const displayName = useMemo(() => {
     if (!session?.user) return "User";
@@ -285,6 +298,16 @@ export default function App() {
       {route === "profile" && (
         <ProfileScreen displayName={displayName} session={session}/>
       )}
+      {route === "budgets" && (
+        <div className="screen">
+          <div className="card">
+            <p className="page-title">Budgets</p>
+            <p style={{ fontSize: 14, color: "var(--muted)", marginTop: 8 }}>
+              Budget tracking is not set up yet in this build.
+            </p>
+          </div>
+        </div>
+      )}
     </>
   );
 
@@ -293,12 +316,19 @@ export default function App() {
       {/* ── Mobile layout ── */}
       <div className="mobile-shell">
         <div className="app-frame">
-          <AppHeader displayName={displayName}/>
+          <AppHeader displayName={displayName} onMenuClick={() => setMenuOpen(true)} menuOpen={menuOpen}/>
           <main className="app-main">{screenContent}</main>
           <BottomNav route={route} navigate={navigate}/>
           <FAB session={session} onSaved={handleFabSaved} />
         </div>
       </div>
+
+      <MobileDrawer
+        menuOpen={menuOpen}
+        route={route}
+        navigate={navigate}
+        setMenuOpen={setMenuOpen}
+      />
 
       {/* ── Desktop layout ── */}
       <div className="desktop-shell">
