@@ -1,36 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 
-/**
- * Toast Component
- * Renders a single toast notification with automatic dismissal
- * 
- * @param {Object} props
- * @param {string} props.id - Unique toast ID
- * @param {string} props.message - Toast message text
- * @param {'success'|'warning'|'error'|'info'} props.type - Toast type
- * @param {number} props.duration - Auto-dismiss duration in ms (0 = no auto-dismiss)
- * @param {Function} props.onDismiss - Callback when toast is dismissed
- * @param {Function} props.onUndo - Optional callback for undo action
- */
 export function Toast({ id, message, type = "info", duration = 3000, onDismiss, onUndo }) {
   const [isVisible, setIsVisible] = useState(true);
   const dismissTimerRef = useRef(null);
   const actionTimerRef = useRef(null);
 
   const clearTimers = () => {
-    if (dismissTimerRef.current) {
-      clearTimeout(dismissTimerRef.current);
-      dismissTimerRef.current = null;
-    }
-    if (actionTimerRef.current) {
-      clearTimeout(actionTimerRef.current);
-      actionTimerRef.current = null;
-    }
+    if (dismissTimerRef.current) { clearTimeout(dismissTimerRef.current); dismissTimerRef.current = null; }
+    if (actionTimerRef.current)  { clearTimeout(actionTimerRef.current);  actionTimerRef.current  = null; }
   };
 
   useEffect(() => {
     clearTimers();
-
     if (duration === 0) return () => clearTimers();
 
     dismissTimerRef.current = setTimeout(() => {
@@ -44,10 +25,7 @@ export function Toast({ id, message, type = "info", duration = 3000, onDismiss, 
   const handleUndo = () => {
     clearTimers();
     setIsVisible(false);
-    actionTimerRef.current = setTimeout(() => {
-      onUndo?.();
-      onDismiss?.(id);
-    }, 180);
+    actionTimerRef.current = setTimeout(() => { onUndo?.(); onDismiss?.(id); }, 180);
   };
 
   const handleClose = () => {
@@ -58,36 +36,33 @@ export function Toast({ id, message, type = "info", duration = 3000, onDismiss, 
 
   return (
     <div className={`toast toast-${type} ${isVisible ? "toast-visible" : ""}`}>
-      <div className="toast-content">
+      {/* Top row: message + buttons */}
+      <div className="toast-body">
         <div className="toast-message">{message}</div>
+        <div className="toast-actions">
+          {onUndo && (
+            <button className="toast-undo" onClick={handleUndo}>UNDO</button>
+          )}
+          <button className="toast-close" onClick={handleClose}>✕</button>
+        </div>
       </div>
-      <div className="toast-actions">
-        {onUndo && (
-          <button
-            className="toast-undo"
-            onClick={handleUndo}
-          >
-            UNDO
-          </button>
-        )}
-        <button
-          className="toast-close"
-          onClick={handleClose}
-        >
-          ✕
-        </button>
-      </div>
+
+      {/* Progress bar — drains from 100% → 0% over `duration` ms */}
+      {duration > 0 && (
+        <div className="toast-progress-track">
+          <div
+            className="toast-progress-fill"
+            key={id}
+            style={{ animationDuration: `${duration}ms` }}
+          />
+        </div>
+      )}
     </div>
   );
 }
 
-/**
- * ToastContainer Component
- * Manages and renders all active toasts
- */
-export function ToastContainer({ toasts, onDismiss, onUndo }) {
+export function ToastContainer({ toasts, onDismiss }) {
   const activeToast = toasts[toasts.length - 1];
-
   return (
     <div className="toast-container">
       {activeToast && (
