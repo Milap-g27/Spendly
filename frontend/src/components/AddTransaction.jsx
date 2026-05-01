@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Icon } from "./Icons";
 import { edgeFetch } from "../lib/utils";
+import { supabase } from "../lib/supabaseClient";
 
 /* ── Inline SVG Icons ─────────────────────────────────────────── */
 
@@ -174,10 +175,36 @@ export function AddTransactionScreen({ session, navigate, setTransactions, addTo
   const [calOpen, setCalOpen]       = useState(false);
   const [status, setStatus]         = useState("idle");
   const [error, setError]           = useState("");
+  const [allCategories, setAllCategories] = useState([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
 
-  const expenseCategories = ["Food", "Transport", "Shopping", "Entertainment", "Health", "Bills & Utilities", "Education", "Others"];
-  const incomeCategories  = ["Salary", "Freelance", "Investment", "Gift", "Others"];
-  const currentCategories = type === "expense" ? expenseCategories : incomeCategories;
+  // Fetch categories from database
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("categories")
+          .select("name, type")
+          .order("name", { ascending: true });
+        
+        if (error) throw error;
+        
+        setAllCategories(data || []);
+      } catch (err) {
+        console.error("Error loading categories:", err);
+        setAllCategories([]);
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+
+    loadCategories();
+  }, []);
+
+  const currentCategories = allCategories
+    .filter(c => c.type === type || c.type === "both")
+    .map(c => c.name)
+    .sort();
 
   /* Display date as YYYY/MM/DD */
   const displayDate = dateISO ? dateISO.replace(/-/g, "/") : "Select date";
@@ -212,7 +239,14 @@ export function AddTransactionScreen({ session, navigate, setTransactions, addTo
       setStatus("done");
       if (setTransactions) {
         setTransactions(prev => {
-          const newList = [saved, ...prev];
+          // Initialize settlement properties for new transaction
+          const newTransaction = {
+            ...saved,
+            settlements: [],
+            totalSettled: 0,
+            outstanding: Number(saved.amount || 0)
+          };
+          const newList = [newTransaction, ...prev];
           return newList.sort((a, b) => {
             const td = new Date(b.transaction_date) - new Date(a.transaction_date);
             return td !== 0 ? td : new Date(b.created_at) - new Date(a.created_at);

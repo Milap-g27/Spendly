@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect, useRef } from "react";
 import { formatCurrency, formatShortDate, getCategoryMeta } from "../lib/utils";
 import { filterTabs } from "../lib/constants";
 import { Icon } from "./Icons";
+import { SettlePanel } from "./SettlePanel";
 import { supabase } from "../lib/supabaseClient";
 
 function CustomDropdown({ value, options, onChange }) {
@@ -71,8 +72,19 @@ function SwipeableRow({ children, onDelete, disableSwipe }) {
 
   const SWIPE_THRESHOLD = -60;
 
+  const isInteractiveElement = (target) => {
+    // Don't swipe if clicking on buttons, links, or inputs
+    return (
+      target.tagName === 'BUTTON' ||
+      target.tagName === 'A' ||
+      target.tagName === 'INPUT' ||
+      target.closest('button') ||
+      target.closest('a')
+    );
+  };
+
   const onTouchStart = (e) => {
-    if (disableSwipe) return;
+    if (disableSwipe || isInteractiveElement(e.target)) return;
     setIsSwiping(true);
     startX.current = e.touches ? e.touches[0].clientX : e.clientX;
   };
@@ -138,9 +150,12 @@ function SwipeableRow({ children, onDelete, disableSwipe }) {
 }
 
 /* ── TransactionRow Extract ─────────────────────────────────────── */
-function TransactionRow({ item, selectMode, isSelected, onToggleSelect, onLongPress, onDeleteSingle }) {
+function TransactionRow({ item, selectMode, isSelected, onToggleSelect, onLongPress, onDeleteSingle, onSettle }) {
   const meta = getCategoryMeta(item.category);
   const timerRef = useRef(null);
+  const isLendOrBorrow = item.category === "Lend" || item.category === "Borrow";
+  const outstanding = item.outstanding || 0;
+  const isFullySettled = outstanding === 0 && item.totalSettled > 0;
   
   const startLongPress = () => {
     if (selectMode) return;
@@ -150,6 +165,15 @@ function TransactionRow({ item, selectMode, isSelected, onToggleSelect, onLongPr
   };
   const cancelLongPress = () => {
     if (timerRef.current) clearTimeout(timerRef.current);
+  };
+
+  const handleMouseDown = (e) => {
+    // Don't trigger long press if clicking buttons or interactive elements
+    if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+      cancelLongPress();
+      return;
+    }
+    startLongPress();
   };
 
   const handleClick = (e) => {
@@ -163,10 +187,10 @@ function TransactionRow({ item, selectMode, isSelected, onToggleSelect, onLongPr
     <SwipeableRow onDelete={() => onDeleteSingle(item)} disableSwipe={selectMode}>
       <div 
         className={`transaction-row compact ${isSelected ? 'selected' : ''}`}
-        onMouseDown={startLongPress}
+        onMouseDown={handleMouseDown}
         onMouseUp={cancelLongPress}
         onMouseLeave={cancelLongPress}
-        onTouchStart={startLongPress}
+        onTouchStart={handleMouseDown}
         onTouchEnd={cancelLongPress}
         onClick={handleClick}
         style={{ paddingLeft: selectMode ? 44 : undefined, transition: "padding 0.2s" }}
@@ -190,17 +214,42 @@ function TransactionRow({ item, selectMode, isSelected, onToggleSelect, onLongPr
         </div>
         <div className="transaction-info">
           <p className="transaction-title">{item.description}</p>
-          <div className="category-bar-wrap" style={{ width: "100%" }}>
+          <div className="category-bar-wrap" style={{ width: "100%", display: "flex", alignItems: "center", gap: "8px" }}>
             <div
               className="category-bar"
               style={{ backgroundColor: meta.chip, width: "100%" }}
             />
             <span className="category-pill">{item.category}</span>
+            {isLendOrBorrow && (
+              <>
+                {isFullySettled && <span className="tx-settled-badge">✓ Settled</span>}
+                {outstanding > 0 && (
+                  <span className="tx-outstanding-badge">
+                    {formatCurrency(outstanding)} outstanding
+                  </span>
+                )}
+              </>
+            )}
           </div>
         </div>
-        <div className={`transaction-amount ${item.type === 'income' ? 'income' : 'expense'}`}>
-          <span className="sign">{item.type === 'income' ? '+' : '–'}</span>
-          <span>{formatCurrency(item.amount)}</span>
+        <div className="transaction-amount-wrapper">
+          {isLendOrBorrow && !selectMode && (
+            <button 
+              className="tx-settle-btn" 
+              onClick={(e) => { 
+                e.preventDefault();
+                e.stopPropagation(); 
+                onSettle(item); 
+              }}
+              title="Settle transaction"
+            >
+              Settle
+            </button>
+          )}
+          <div className={`transaction-amount ${item.type === 'income' ? 'income' : 'expense'}`}>
+            <span className="sign">{item.type === 'income' ? '+' : '–'}</span>
+            <span>{isLendOrBorrow ? formatCurrency(outstanding) : formatCurrency(item.amount)}</span>
+          </div>
         </div>
       </div>
     </SwipeableRow>
@@ -208,7 +257,7 @@ function TransactionRow({ item, selectMode, isSelected, onToggleSelect, onLongPr
 }
 
 /* ── Main Transactions Screen ─────────────────────────────────── */
-export function TransactionsScreen({ transactions, search, setSearch, activeFilter, setActiveFilter, customRange, setCustomRange, onApplyCustom, setTransactions }) {
+export function TransactionsScreen({ transactions, search, setSearch, activeFilter, setActiveFilter, customRange, setCustomRange, onApplyCustom, setTransactions, settleTransaction }) {
   const [typeFilter, setTypeFilter] = useState("All");
 
   /* Multiselect / Delete State */
@@ -218,6 +267,10 @@ export function TransactionsScreen({ transactions, search, setSearch, activeFilt
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const undoTimerRef = useRef(null);
   const snackbarExitTimerRef = useRef(null);
+
+  /* Settle Panel State */
+  const [selectedTransactionForSettle, setSelectedTransactionForSettle] = useState(null);
+  const [settleLoading, setSettleLoading] = useState(false);
 
   const clearSnackbarExitTimer = () => {
     if (snackbarExitTimerRef.current) {
@@ -299,6 +352,21 @@ export function TransactionsScreen({ transactions, search, setSearch, activeFilt
   const cancelSelectMode = () => {
     setSelectMode(false);
     setSelectedIds(new Set());
+  };
+
+  const handleSettleTransaction = async (transactionId, settleAmount, note) => {
+    setSettleLoading(true);
+    const result = await settleTransaction(transactionId, settleAmount, note);
+    setSettleLoading(false);
+    return result;
+  };
+
+  const handleSettleOpen = (transaction) => {
+    setSelectedTransactionForSettle(transaction);
+  };
+
+  const handleSettleClose = () => {
+    setSelectedTransactionForSettle(null);
   };
 
   // Listen back button to prevent default and cancel select mode
@@ -462,6 +530,7 @@ export function TransactionsScreen({ transactions, search, setSearch, activeFilt
                 onToggleSelect={handleToggleSelect}
                 onLongPress={handleLongPress}
                 onDeleteSingle={handleDeleteSingle}
+                onSettle={handleSettleOpen}
               />
             ))}
           </section>
@@ -494,6 +563,16 @@ export function TransactionsScreen({ transactions, search, setSearch, activeFilt
             <div className="undo-progress-fill" key={pendingDelete.length} />
           </div>
         </div>
+      )}
+
+      {/* Settle Panel */}
+      {selectedTransactionForSettle && (
+        <SettlePanel
+          transaction={selectedTransactionForSettle}
+          onClose={handleSettleClose}
+          onSettle={handleSettleTransaction}
+          isLoading={settleLoading}
+        />
       )}
     </div>
   );

@@ -209,12 +209,16 @@ CREATE POLICY "Users see global + own categories"
 | Food          | expense | `#ef4444` | 🍕   |
 | Transport     | expense | `#f97316` | 🚌   |
 | Shopping      | expense | `#eab308` | 🛍️   |
-| Bills         | expense | `#3b82f6` | ⚡   |
+| Bills         | expense | `#3b82f6` | 🧾   |
 | Health        | expense | `#ec4899` | 💊   |
 | Entertainment | expense | `#8b5cf6` | 🎬   |
+| Lend          | expense | `#06b6d4` | 🤝   |
+| Borrow        | expense | `#f59e0b` | ⬇️   |
 | Salary        | income  | `#22c55e` | 💼   |
 | Pocket Money  | income  | `#14b8a6` | 👛   |
 | Freelance     | income  | `#6366f1` | 💻   |
+| Education     | expense | `#7c3aed` | 🎓   |
+| Petrol        | expense | `#f59e0b` | ⛽   |
 | Other         | both    | `#6b7280` | 📦   |
 
 ---
@@ -253,7 +257,7 @@ Output format:
 }
 
 Allowed categories:
-  expense: Food, Transport, Shopping, Bills, Health, Entertainment, Other
+  expense: Food, Transport, Shopping, Bills, Health, Entertainment, Lend, Borrow, Education, Petrol, Other
   income:  Salary, Pocket Money, Freelance, Other
 
 Rules:
@@ -906,7 +910,7 @@ pytest backend/tests/ -v
 
 **Frontend:**
 - Manual test on iPhone Safari (Add to Home Screen)
-- Test Hindi-English mixed input: `"aaj 200 ka petrol"` → Transport
+- Test Hindi-English mixed input: `"aaj 200 ka petrol"` → Petrol
 
 ---
 

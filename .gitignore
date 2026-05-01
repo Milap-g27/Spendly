@@ -85,8 +85,8 @@ artifacts/
 Thumbs.db
 
 # Supabase
+# Supabase - ignore local dev artifacts and migrations
 supabase/
-supabase/.temp/
 .supabase/
 
 # Ignore spendly-main and all its contents

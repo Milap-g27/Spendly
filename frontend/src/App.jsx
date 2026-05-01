@@ -245,7 +245,8 @@ export default function App() {
     topCategory, 
     customRange, 
     setCustomRange, 
-    applyCustom 
+    applyCustom,
+    settleTransaction
   } = useTransactions(session, activeFilter);
 
   useEffect(() => {
@@ -367,6 +368,7 @@ export default function App() {
           activeFilter={activeFilter} setActiveFilter={setActiveFilter}
           customRange={customRange} setCustomRange={setCustomRange}
           onApplyCustom={applyCustom} setTransactions={setTransactions}
+          settleTransaction={settleTransaction}
         />
       )}
       {route === "add" && (

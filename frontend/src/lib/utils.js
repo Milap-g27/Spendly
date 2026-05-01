@@ -59,7 +59,7 @@ export function getCategoryMeta(category) {
 export function attachIcons(items) {
   return items.map((item) => ({
     ...item,
-    icon: item.icon || iconByCategory[item.category] || "cart",
+    icon: item.icon || iconByCategory[item.category] || "box",
     description: item.description || item.raw_input || "Expense",
   }));
 }
