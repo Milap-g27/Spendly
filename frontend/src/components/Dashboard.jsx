@@ -17,10 +17,10 @@ export function DashboardScreen({ displayName, transactions, totalSpent, transac
       
       if (usage >= 80) {
         warningShownRef.current = true;
-        addToast(`⚠ Your monthly budget is ${Math.round(usage)}% spent`, "warning", 0); // 0 = no auto-dismiss
+        addToast(`⚠ Your monthly budget is ${Math.round(usage)}% spent`, "warning", 5000);
       }
     }
-  }, []);
+  }, [totalSpent, addToast]);
 
   return (
     <div className="screen">

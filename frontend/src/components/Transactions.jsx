@@ -208,14 +208,32 @@ function TransactionRow({ item, selectMode, isSelected, onToggleSelect, onLongPr
 }
 
 /* ── Main Transactions Screen ─────────────────────────────────── */
-export function TransactionsScreen({ transactions, search, setSearch, activeFilter, setActiveFilter, customRange, setCustomRange, onApplyCustom, setTransactions, addToast }) {
+export function TransactionsScreen({ transactions, search, setSearch, activeFilter, setActiveFilter, customRange, setCustomRange, onApplyCustom, setTransactions }) {
   const [typeFilter, setTypeFilter] = useState("All");
 
   /* Multiselect / Delete State */
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [pendingDelete, setPendingDelete] = useState([]); 
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
   const undoTimerRef = useRef(null);
+  const snackbarExitTimerRef = useRef(null);
+
+  const clearSnackbarExitTimer = () => {
+    if (snackbarExitTimerRef.current) {
+      clearTimeout(snackbarExitTimerRef.current);
+      snackbarExitTimerRef.current = null;
+    }
+  };
+
+  const hideUndoSnackbar = () => {
+    clearSnackbarExitTimer();
+    setSnackbarVisible(false);
+    snackbarExitTimerRef.current = setTimeout(() => {
+      setPendingDelete([]);
+      snackbarExitTimerRef.current = null;
+    }, 220);
+  };
 
   /* Helper to physically delete from Supabase and remove from main state */
   const commitPendingDeletes = async (itemsToCommit) => {
@@ -233,22 +251,19 @@ export function TransactionsScreen({ transactions, search, setSearch, activeFilt
       if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
       commitPendingDeletes(pendingDelete);
     }
+
+    clearSnackbarExitTimer();
     
     setPendingDelete(itemsToDelete);
+    setSnackbarVisible(true);
     setSelectMode(false);
     setSelectedIds(new Set());
-    
-    // Show delete notification
-    const count = itemsToDelete.length;
-    if (addToast) {
-      addToast(`${count} transaction${count > 1 ? 's' : ''} deleted`, "error", 5000);
-    }
     
     // Start 5s countdown
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
     undoTimerRef.current = setTimeout(() => {
       commitPendingDeletes(itemsToDelete);
-      setPendingDelete([]);
+      hideUndoSnackbar();
     }, 5000);
   };
 
@@ -278,7 +293,7 @@ export function TransactionsScreen({ transactions, search, setSearch, activeFilt
 
   const handleUndo = () => {
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
-    setPendingDelete([]); // Restore visually
+    hideUndoSnackbar();
   };
 
   const cancelSelectMode = () => {
@@ -297,6 +312,13 @@ export function TransactionsScreen({ transactions, search, setSearch, activeFilt
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
   }, [selectMode]);
+
+  useEffect(() => {
+    return () => {
+      if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+      clearSnackbarExitTimer();
+    };
+  }, []);
 
   /* Filtering */
   const sorted = useMemo(() =>
@@ -462,7 +484,7 @@ export function TransactionsScreen({ transactions, search, setSearch, activeFilt
 
       {/* Undo Snackbar */}
       {pendingDelete.length > 0 && (
-        <div className="undo-snackbar">
+        <div className={`undo-snackbar ${snackbarVisible ? "is-visible" : ""}`}>
           <div className="undo-snackbar-content">
             <span>{pendingDelete.length} transaction{pendingDelete.length > 1 ? 's' : ''} deleted</span>
             <button className="undo-btn" onClick={handleUndo}>UNDO</button>

@@ -2286,16 +2286,24 @@ input { font-family: inherit; }
   bottom: 80px;
   left: 16px;
   right: 16px;
-  background-color: #1f2937; /* Dark grayish-blue */
+  background-color: #fff1f2;
+  border: 1px solid #fecdd3;
   border-radius: 8px;
   z-index: 100;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  animation: slideUpSnack 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
   max-width: 500px;
   margin: 0 auto;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  box-shadow: 0 10px 25px rgba(190, 18, 60, 0.12);
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.undo-snackbar.is-visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .undo-snackbar-content {
@@ -2303,7 +2311,7 @@ input { font-family: inherit; }
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  color: #fff;
+  color: #9f1239;
   font-size: 14px;
   font-weight: 500;
 }
@@ -2311,7 +2319,7 @@ input { font-family: inherit; }
 .undo-btn {
   background: none;
   border: none;
-  color: #60a5fa; /* Light blue accent */
+  color: #be123c;
   font-weight: 700;
   font-size: 14px;
   cursor: pointer;
@@ -2321,18 +2329,18 @@ input { font-family: inherit; }
 }
 
 .undo-btn:hover {
-  background: rgba(96, 165, 250, 0.1);
+  background: rgba(190, 18, 60, 0.08);
 }
 
 .undo-progress-bar {
   height: 4px;
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(190, 18, 60, 0.12);
   width: 100%;
 }
 
 .undo-progress-fill {
   height: 100%;
-  background-color: #60a5fa;
+  background-color: #fb7185;
   /* Animate width from 100% to 0% linearly over 5s */
   animation: drainBar 5s linear forwards;
 }
@@ -2372,11 +2380,10 @@ input { font-family: inherit; }
   font-size: 14px;
   font-weight: 500;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-  animation: slideUpSnack 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
   pointer-events: auto;
   opacity: 0;
-  transform: translateY(20px);
-  transition: opacity 0.2s, transform 0.2s;
+  transform: translateY(16px);
+  transition: opacity 0.22s ease, transform 0.22s ease;
 }
 
 .toast.toast-visible {
@@ -2392,15 +2399,7 @@ input { font-family: inherit; }
   min-width: 0;
 }
 
-.toast-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  font-weight: 700;
-  flex-shrink: 0;
-  min-width: 20px;
-}
+/* left icon removed to avoid duplicate symbols when messages include emojis */
 
 .toast-message {
   flex: 1;

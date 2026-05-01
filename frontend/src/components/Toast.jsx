@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /**
  * Toast Component
@@ -14,48 +14,51 @@ import { useEffect, useState } from "react";
  */
 export function Toast({ id, message, type = "info", duration = 3000, onDismiss, onUndo }) {
   const [isVisible, setIsVisible] = useState(true);
+  const dismissTimerRef = useRef(null);
+  const actionTimerRef = useRef(null);
 
-  useEffect(() => {
-    if (duration === 0) return;
-    
-    const timer = setTimeout(() => {
-      setIsVisible(false);
-      setTimeout(() => onDismiss?.(id), 200); // Allow animation to finish
-    }, duration);
-
-    return () => clearTimeout(timer);
-  }, [id, duration, onDismiss]);
-
-  const getIcon = () => {
-    switch (type) {
-      case "success":
-        return "✓";
-      case "warning":
-        return "⚠";
-      case "error":
-        return "✕";
-      default:
-        return "ℹ";
+  const clearTimers = () => {
+    if (dismissTimerRef.current) {
+      clearTimeout(dismissTimerRef.current);
+      dismissTimerRef.current = null;
+    }
+    if (actionTimerRef.current) {
+      clearTimeout(actionTimerRef.current);
+      actionTimerRef.current = null;
     }
   };
 
+  useEffect(() => {
+    clearTimers();
+
+    if (duration === 0) return () => clearTimers();
+
+    dismissTimerRef.current = setTimeout(() => {
+      setIsVisible(false);
+      actionTimerRef.current = setTimeout(() => onDismiss?.(id), 220);
+    }, duration);
+
+    return () => clearTimers();
+  }, [id, duration, onDismiss]);
+
   const handleUndo = () => {
+    clearTimers();
     setIsVisible(false);
-    setTimeout(() => {
+    actionTimerRef.current = setTimeout(() => {
       onUndo?.();
       onDismiss?.(id);
-    }, 100);
+    }, 180);
   };
 
   const handleClose = () => {
+    clearTimers();
     setIsVisible(false);
-    setTimeout(() => onDismiss?.(id), 200);
+    actionTimerRef.current = setTimeout(() => onDismiss?.(id), 220);
   };
 
   return (
     <div className={`toast toast-${type} ${isVisible ? "toast-visible" : ""}`}>
       <div className="toast-content">
-        <div className="toast-icon">{getIcon()}</div>
         <div className="toast-message">{message}</div>
       </div>
       <div className="toast-actions">
@@ -83,19 +86,21 @@ export function Toast({ id, message, type = "info", duration = 3000, onDismiss, 
  * Manages and renders all active toasts
  */
 export function ToastContainer({ toasts, onDismiss, onUndo }) {
+  const activeToast = toasts[toasts.length - 1];
+
   return (
     <div className="toast-container">
-      {toasts.map((toast) => (
+      {activeToast && (
         <Toast
-          key={toast.id}
-          id={toast.id}
-          message={toast.message}
-          type={toast.type}
-          duration={toast.duration}
+          key={activeToast.id}
+          id={activeToast.id}
+          message={activeToast.message}
+          type={activeToast.type}
+          duration={activeToast.duration}
           onDismiss={onDismiss}
-          onUndo={toast.onUndo}
+          onUndo={activeToast.onUndo}
         />
-      ))}
+      )}
     </div>
   );
 }

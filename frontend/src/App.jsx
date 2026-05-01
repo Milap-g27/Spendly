@@ -32,7 +32,6 @@ function FAB({ session, onSaved, addToast, onUndoTransaction }) {
   const [parsed, setParsed]   = useState(null);
   const [status, setStatus]   = useState("idle"); // idle|parsing|ready|saving|done
   const [error, setError]     = useState("");
-  const [lastTxId, setLastTxId] = useState(null);
 
   const getISTDate = (offsetDays = 0) => {
     const d = new Date();
@@ -82,10 +81,6 @@ function FAB({ session, onSaved, addToast, onUndoTransaction }) {
         },
         token: session?.access_token,
       });
-      setStatus("done");
-      
-      // Store transaction ID for undo
-      setLastTxId(saved.id);
       
       // Show success toast with undo
       if (addToast) {
@@ -98,7 +93,7 @@ function FAB({ session, onSaved, addToast, onUndoTransaction }) {
       }
       
       onSaved?.(saved);
-      setTimeout(close, 1600);
+      close();
     } catch (e) {
       setError("Save failed: " + e.message);
       setStatus("ready");
@@ -156,52 +151,40 @@ function FAB({ session, onSaved, addToast, onUndoTransaction }) {
           {/* Result preview */}
           {parsed && status !== "parsing" && (
             <div className={`fab-result show ${isIncome ? "income" : "expense"}`}>
-              {status === "done" ? (
-                <div style={{ textAlign: "center", padding: "8px 0" }}>
-                  <div style={{ fontSize: 28, marginBottom: 6 }}>{isIncome ? "💚" : "✅"}</div>
-                  <p style={{ fontWeight: 600, color: "var(--text)" }}>Saved to Spendly!</p>
-                  <p style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>
-                    {formatCurrency(parsed.amount)} · {parsed.category}
-                  </p>
-                </div>
-              ) : (
-                <>
-                  <div className="fab-result-top">
-                    <span className={`fab-result-amount ${isIncome ? "income" : "expense"}`}>
-                      {formatCurrency(parsed.amount)}
-                    </span>
-                    <span className="type-badge" style={{
-                      background: isIncome ? "#dcfce7" : "#fee2e2",
-                      color: isIncome ? "#166534" : "#991b1b",
-                    }}>
-                      {isIncome ? "↑ Income" : "↓ Expense"}
-                    </span>
-                  </div>
-                  <div className="fab-meta">
-                    <span className="fab-meta-chip" style={{
-                      background: catMeta.chip, color: catMeta.color, border: "none"
-                    }}>
-                      {parsed.category}
-                    </span>
-                    <span className="fab-meta-chip">{parsed.description}</span>
-                    <span className="fab-meta-chip">{
-                      (() => {
-                        if (!parsed.date || parsed.date === today) return "📅 Today";
-                        if (parsed.date === yesterdayStr) return "📅 Yesterday";
-                        const d = new Date(parsed.date + "T00:00:00");
-                        return "📅 " + d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
-                      })()
-                    }</span>
-                  </div>
-                  <button
-                    className={`fab-save-btn ${isIncome ? "income" : "expense"}`}
-                    onClick={handleSave}
-                    disabled={status === "saving"}
-                  >
-                    {status === "saving" ? "Saving…" : `Save ${isIncome ? "Income" : "Expense"} →`}
-                  </button>
-                </>
-              )}
+              <div className="fab-result-top">
+                <span className={`fab-result-amount ${isIncome ? "income" : "expense"}`}>
+                  {formatCurrency(parsed.amount)}
+                </span>
+                <span className="type-badge" style={{
+                  background: isIncome ? "#dcfce7" : "#fee2e2",
+                  color: isIncome ? "#166534" : "#991b1b",
+                }}>
+                  {isIncome ? "↑ Income" : "↓ Expense"}
+                </span>
+              </div>
+              <div className="fab-meta">
+                <span className="fab-meta-chip" style={{
+                  background: catMeta.chip, color: catMeta.color, border: "none"
+                }}>
+                  {parsed.category}
+                </span>
+                <span className="fab-meta-chip">{parsed.description}</span>
+                <span className="fab-meta-chip">{
+                  (() => {
+                    if (!parsed.date || parsed.date === today) return "📅 Today";
+                    if (parsed.date === yesterdayStr) return "📅 Yesterday";
+                    const d = new Date(parsed.date + "T00:00:00");
+                    return "📅 " + d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+                  })()
+                }</span>
+              </div>
+              <button
+                className={`fab-save-btn ${isIncome ? "income" : "expense"}`}
+                onClick={handleSave}
+                disabled={status === "saving"}
+              >
+                {status === "saving" ? "Saving…" : `Save ${isIncome ? "Income" : "Expense"} →`}
+              </button>
             </div>
           )}
         </div>
@@ -229,9 +212,9 @@ export default function App() {
   const [profileAvatarSrc, setProfileAvatarSrc] = useState("");
   const [toasts, setToasts] = useState([]);
   
-  const addToast = (message, type = "info", duration = 3000, onUndoCallback = null) => {
-    const id = Date.now();
-    setToasts(prev => [...prev, { id, message, type, duration, onUndo: onUndoCallback }]);
+  const addToast = (message, type = "info", duration = 5000, onUndoCallback = null) => {
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    setToasts([{ id, message, type, duration, onUndo: onUndoCallback }]);
   };
 
   const removeToast = (id) => {
@@ -349,7 +332,6 @@ export default function App() {
           activeFilter={activeFilter} setActiveFilter={setActiveFilter}
           customRange={customRange} setCustomRange={setCustomRange}
           onApplyCustom={applyCustom} setTransactions={setTransactions}
-          addToast={addToast}
         />
       )}
       {route === "add" && (

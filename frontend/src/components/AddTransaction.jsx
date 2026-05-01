@@ -223,7 +223,7 @@ export function AddTransactionScreen({ session, navigate, setTransactions, addTo
       // Show success toast with undo
       if (addToast) {
         addToast(
-          `✓ ${type === "income" ? "Income" : "Expense"} of ₹${Number(amount).toFixed(2)} added`,
+          `${type === "income" ? "Income" : "Expense"} of ₹${Number(amount).toFixed(2)} added`,
           "success",
           5000,
           () => onUndoTransaction?.(saved.id)
