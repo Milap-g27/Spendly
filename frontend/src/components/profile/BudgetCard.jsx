@@ -2,8 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Icon } from "../Icons";
 import { formatCurrency } from "../../lib/utils";
 
-const STORAGE_KEY = "spendly.profile.monthlyBudget";
-
 function getThisMonthSpent(transactions = []) {
   const now = new Date();
   return transactions.reduce((sum, transaction) => {
@@ -30,17 +28,16 @@ function BudgetStatRow({ icon, label, sublabel, value, tone }) {
   );
 }
 
-export function BudgetCard({ transactions }) {
+export function BudgetCard({ transactions, budget = 0, onSaveBudget }) {
   const spentThisMonth = useMemo(() => getThisMonthSpent(transactions), [transactions]);
-  const [savedBudget, setSavedBudget] = useState(0);
+  const [savedBudget, setSavedBudget] = useState(Number(budget) || 0);
   const [draftBudget, setDraftBudget] = useState("");
 
   useEffect(() => {
-    const storedBudget = Number(window.localStorage.getItem(STORAGE_KEY) || 0);
-    const nextBudget = Number.isFinite(storedBudget) && storedBudget > 0 ? storedBudget : 0;
+    const nextBudget = Number(budget) || 0;
     setSavedBudget(nextBudget);
     setDraftBudget(nextBudget > 0 ? String(nextBudget) : "");
-  }, []);
+  }, [budget]);
 
   const remaining = Math.max(savedBudget - spentThisMonth, 0);
   const usage = savedBudget > 0 ? Math.min((spentThisMonth / savedBudget) * 100, 100) : 0;
@@ -49,7 +46,7 @@ export function BudgetCard({ transactions }) {
 
   const handleSave = () => {
     const nextBudget = Math.max(0, Number(draftBudget) || 0);
-    window.localStorage.setItem(STORAGE_KEY, String(nextBudget));
+    onSaveBudget?.(nextBudget);
     setSavedBudget(nextBudget);
     setDraftBudget(nextBudget > 0 ? String(nextBudget) : "");
   };

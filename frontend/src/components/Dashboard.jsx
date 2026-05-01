@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { formatCurrency, formatShortDate, getCategoryMeta } from "../lib/utils";
 import { Icon } from "./Icons";
 
-export function DashboardScreen({ displayName, transactions, totalSpent, transactionCount, topCategory, onSeeAll, onInsights, addToast }) {
+export function DashboardScreen({ displayName, transactions, totalSpent, transactionCount, topCategory, onSeeAll, onInsights, addToast, monthlyBudget = 0 }) {
   const recent = transactions.slice(0, 4);
   const warningShownRef = useRef(false);
 
@@ -10,17 +10,17 @@ export function DashboardScreen({ displayName, transactions, totalSpent, transac
   useEffect(() => {
     if (warningShownRef.current) return;
     
-    const monthlyBudget = parseFloat(window.localStorage.getItem("spendly.profile.monthlyBudget")) || 0;
-    
-    if (monthlyBudget > 0) {
-      const usage = (totalSpent / monthlyBudget) * 100;
+    const budgetValue = Number(monthlyBudget) || 0;
+
+    if (budgetValue > 0) {
+      const usage = (totalSpent / budgetValue) * 100;
       
       if (usage >= 80) {
         warningShownRef.current = true;
         addToast(`⚠ Your monthly budget is ${Math.round(usage)}% spent`, "warning", 5000);
       }
     }
-  }, [totalSpent, addToast]);
+  }, [totalSpent, addToast, monthlyBudget]);
 
   return (
     <div className="screen">

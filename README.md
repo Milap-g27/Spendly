@@ -792,6 +792,59 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from "recharts"
 
 ---
 
+## 🗄️ Database & Local Setup
+
+This project uses Supabase (PostgreSQL) for the database, authentication, RLS policies, migrations, and Edge Functions. Below are quick steps to get the database and app running locally.
+
+### Quick start (local Supabase via Docker)
+
+1. Install Docker and the Supabase CLI (optional but recommended).
+2. From the project root, bring up Supabase services:
+
+```bash
+docker compose up -d
+# or via Supabase CLI: supabase start
+```
+
+3. Apply migrations (Supabase CLI recommended):
+
+```bash
+supabase db reset
+supabase db push
+```
+
+4. Seed example data (if needed):
+
+```bash
+psql $DATABASE_URL -f supabase/seed.sql
+```
+
+5. Set environment variables for the frontend (create `frontend/.env`):
+
+```
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+```
+
+6. Start the frontend:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open the app at the Vite dev server URL (usually `http://localhost:5173`).
+
+### Notes
+- Migrations are in `supabase/migrations/` and should be applied in numeric order.
+- RLS policies are defined in `003_rls_policies.sql`; ensure your auth tokens are valid when testing protected endpoints.
+- For production, use a hosted Supabase project and set environment variables accordingly.
+
+If you'd like, I can add a `.env.example` to the repository and a short `CONTRIBUTING.md` with deploy/run steps.
+
+---
+
 ### 📱 Sprint 8 — iOS / PWA Polish (Day 11)
 
 **Goal:** Installable on iPhone, safe area handled, no zoom bugs.

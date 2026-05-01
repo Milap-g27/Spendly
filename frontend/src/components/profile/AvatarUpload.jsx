@@ -4,6 +4,7 @@ import { Icon } from "../Icons";
 export function AvatarUpload({ displayName, avatarSrc, onSave }) {
   const inputRef = useRef(null);
   const [pendingAvatarSrc, setPendingAvatarSrc] = useState("");
+  const [pendingFile, setPendingFile] = useState(null);
 
   const activeAvatarSrc = pendingAvatarSrc || avatarSrc || "";
 
@@ -11,28 +12,33 @@ export function AvatarUpload({ displayName, avatarSrc, onSave }) {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    setPendingFile(file);
     const reader = new FileReader();
     reader.onload = () => {
       const nextValue = typeof reader.result === "string" ? reader.result : "";
-      if (nextValue) {
-        setPendingAvatarSrc(nextValue);
-      }
+      if (nextValue) setPendingAvatarSrc(nextValue);
     };
     reader.readAsDataURL(file);
     event.target.value = "";
   };
 
   const handleSave = () => {
-    if (!pendingAvatarSrc) return;
-    onSave?.(pendingAvatarSrc);
-    setPendingAvatarSrc("");
+    if (pendingFile) {
+      onSave?.(pendingFile);
+      setPendingFile(null);
+      setPendingAvatarSrc("");
+      return;
+    }
+    if (pendingAvatarSrc) {
+      onSave?.(pendingAvatarSrc);
+      setPendingAvatarSrc("");
+    }
   };
 
   const handleCancel = () => {
     setPendingAvatarSrc("");
-    if (inputRef.current) {
-      inputRef.current.value = "";
-    }
+    setPendingFile(null);
+    if (inputRef.current) inputRef.current.value = "";
   };
 
   return (
@@ -65,7 +71,7 @@ export function AvatarUpload({ displayName, avatarSrc, onSave }) {
         </button>
       </div>
 
-      {pendingAvatarSrc && (
+      {(pendingAvatarSrc || pendingFile) && (
         <div className="profile-inline-actions avatar-save-bar">
           <button type="button" className="profile-inline-cancel" onClick={handleCancel}>
             Cancel

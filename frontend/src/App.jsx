@@ -4,6 +4,7 @@ import { filterTabs } from "./lib/constants";
 import { getRouteFromHash, edgeFetch, formatCurrency, getCategoryMeta, attachIcons } from "./lib/utils";
 import { useAuth } from "./hooks/useAuth";
 import { useTransactions } from "./hooks/useTransactions";
+import { getProfile as apiGetProfile, updateProfile as apiUpdateProfile, uploadAvatar as apiUploadAvatar } from "./services/profile";
 
 import { AppHeader, BottomNav, DesktopSidebar, DesktopHeader } from "./components/Layout";
 import { MobileDrawer } from "./components/MobileDrawer";
@@ -210,6 +211,7 @@ export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileName, setProfileName] = useState("User");
   const [profileAvatarSrc, setProfileAvatarSrc] = useState("");
+  const [profileMonthlyBudget, setProfileMonthlyBudget] = useState(0);
   const [toasts, setToasts] = useState([]);
   
   const addToast = (message, type = "info", duration = 5000, onUndoCallback = null) => {
@@ -275,8 +277,19 @@ export default function App() {
   useEffect(() => {
     if (!session?.user) return;
     const fallbackName = session.user.user_metadata?.full_name || session.user.email?.split("@")[0] || "User";
-    setProfileName(window.localStorage.getItem("spendly.profile.name") || fallbackName);
-    setProfileAvatarSrc(window.localStorage.getItem("spendly.profile.avatar") || "");
+
+    (async () => {
+      try {
+        const p = await apiGetProfile(session.user);
+        setProfileName(p?.display_name || fallbackName);
+        setProfileAvatarSrc(p?.avatar_url || "");
+        setProfileMonthlyBudget(Number(p?.monthly_budget) || 0);
+      } catch (err) {
+        setProfileName(window.localStorage.getItem("spendly.profile.name") || fallbackName);
+        setProfileAvatarSrc(window.localStorage.getItem("spendly.profile.avatar") || "");
+        setProfileMonthlyBudget(Number(window.localStorage.getItem("spendly.profile.monthlyBudget")) || 0);
+      }
+    })();
   }, [session]);
 
   const displayName = profileName;
@@ -284,14 +297,35 @@ export default function App() {
   const navigate = (next) => { window.location.hash = `#/${next}`; };
   const isPolicyRoute = route === "privacy" || route === "terms";
 
-  const updateProfile = (patch) => {
-    if (Object.prototype.hasOwnProperty.call(patch, "name")) {
-      setProfileName(patch.name || "User");
-      window.localStorage.setItem("spendly.profile.name", patch.name || "User");
-    }
-    if (Object.prototype.hasOwnProperty.call(patch, "avatarSrc")) {
-      setProfileAvatarSrc(patch.avatarSrc || "");
-      window.localStorage.setItem("spendly.profile.avatar", patch.avatarSrc || "");
+  const updateProfile = async (patch) => {
+    try {
+      if (Object.prototype.hasOwnProperty.call(patch, "name")) {
+        const updated = await apiUpdateProfile({ display_name: patch.name || null }, session.user);
+        setProfileName(updated.display_name || "User");
+        window.localStorage.setItem("spendly.profile.name", updated.display_name || "User");
+      }
+
+      if (Object.prototype.hasOwnProperty.call(patch, "monthlyBudget")) {
+        const budgetValue = patch.monthlyBudget === "" || patch.monthlyBudget == null ? 0 : Number(patch.monthlyBudget);
+        const updated = await apiUpdateProfile({ monthly_budget: budgetValue }, session.user);
+        setProfileMonthlyBudget(Number(updated.monthly_budget) || 0);
+        window.localStorage.setItem("spendly.profile.monthlyBudget", String(Number(updated.monthly_budget) || 0));
+      }
+
+      // avatarSrc may be a string preview or a File object (from AvatarUpload)
+      if (Object.prototype.hasOwnProperty.call(patch, "avatarSrc")) {
+        if (patch.avatarSrc instanceof File) {
+          const publicUrl = await apiUploadAvatar(patch.avatarSrc, session.user);
+          setProfileAvatarSrc(publicUrl || "");
+          window.localStorage.setItem("spendly.profile.avatar", publicUrl || "");
+        } else {
+          // preview/base64 string — persist as temporary local state
+          setProfileAvatarSrc(patch.avatarSrc || "");
+          window.localStorage.setItem("spendly.profile.avatar", patch.avatarSrc || "");
+        }
+      }
+    } catch (err) {
+      console.error("Failed to update profile:", err);
     }
   };
 
@@ -324,6 +358,7 @@ export default function App() {
           onSeeAll={() => navigate("transactions")}
           onInsights={() => navigate("insights")}
           addToast={addToast}
+          monthlyBudget={profileMonthlyBudget}
         />
       )}
       {route === "transactions" && (
@@ -353,6 +388,7 @@ export default function App() {
           transactions={transactions}
           navigate={navigate}
           avatarSrc={profileAvatarSrc}
+          monthlyBudget={profileMonthlyBudget}
           onProfileChange={updateProfile}
         />
       )}
