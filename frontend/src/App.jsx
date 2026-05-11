@@ -387,7 +387,7 @@ export default function App() {
         <ProfileScreen
           displayName={displayName}
           session={session}
-          transactions={transactions}
+          totalSpent={totalSpent}
           navigate={navigate}
           avatarSrc={profileAvatarSrc}
           monthlyBudget={profileMonthlyBudget}

@@ -15,7 +15,7 @@ function ProfileSection({ label, children }) {
   );
 }
 
-export function ProfileScreen({ displayName, session, transactions, navigate, onProfileChange, avatarSrc, monthlyBudget }) {
+export function ProfileScreen({ displayName, session, totalSpent, navigate, onProfileChange, avatarSrc, monthlyBudget }) {
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
 
   return (
@@ -35,7 +35,7 @@ export function ProfileScreen({ displayName, session, transactions, navigate, on
       </ProfileSection>
 
       <ProfileSection label="BUDGET & LIMITS">
-        <BudgetCard transactions={transactions} budget={monthlyBudget} onSaveBudget={(nextBudget) => onProfileChange?.({ monthlyBudget: nextBudget })} />
+        <BudgetCard totalSpent={totalSpent} budget={monthlyBudget} onSaveBudget={(nextBudget) => onProfileChange?.({ monthlyBudget: nextBudget })} />
       </ProfileSection>
 
       <ProfileSection label="SECURITY">

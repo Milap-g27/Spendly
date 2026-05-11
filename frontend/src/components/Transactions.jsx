@@ -434,7 +434,7 @@ export function TransactionsScreen({ transactions, search, setSearch, activeFilt
 
       {/* Selection Top Bar */}
       {selectMode && (
-        <div className="selection-topbar" style={{ marginBottom: "20px", borderRadius: "12px", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 16px", backgroundColor: "var(--card-bg)" }}>
+        <div className="selection-topbar" style={{ position: "sticky", top: "20px", zIndex: 50, marginBottom: "20px", borderRadius: "12px", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 16px", backgroundColor: "var(--card-bg)", boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)" }}>
           <div className="selection-topbar-inner" style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
             <button className="selection-cancel-btn" onClick={cancelSelectMode}>Cancel</button>
             <span className="selection-count">{selectedIds.size} selected</span>

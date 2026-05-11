@@ -2,17 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Icon } from "../Icons";
 import { formatCurrency } from "../../lib/utils";
 
-function getThisMonthSpent(transactions = []) {
-  const now = new Date();
-  return transactions.reduce((sum, transaction) => {
-    if (transaction.type !== "expense") return sum;
-    const date = new Date(`${transaction.transaction_date}T00:00:00`);
-    if (Number.isNaN(date.getTime())) return sum;
-    if (date.getFullYear() !== now.getFullYear() || date.getMonth() !== now.getMonth()) return sum;
-    return sum + Number(transaction.amount || 0);
-  }, 0);
-}
-
 function BudgetStatRow({ icon, label, sublabel, value, tone }) {
   return (
     <div className="profile-list-item">
@@ -28,8 +17,7 @@ function BudgetStatRow({ icon, label, sublabel, value, tone }) {
   );
 }
 
-export function BudgetCard({ transactions, budget = 0, onSaveBudget }) {
-  const spentThisMonth = useMemo(() => getThisMonthSpent(transactions), [transactions]);
+export function BudgetCard({ totalSpent = 0, budget = 0, onSaveBudget }) {
   const [savedBudget, setSavedBudget] = useState(Number(budget) || 0);
   const [draftBudget, setDraftBudget] = useState("");
 
@@ -39,8 +27,8 @@ export function BudgetCard({ transactions, budget = 0, onSaveBudget }) {
     setDraftBudget(nextBudget > 0 ? String(nextBudget) : "");
   }, [budget]);
 
-  const remaining = Math.max(savedBudget - spentThisMonth, 0);
-  const usage = savedBudget > 0 ? Math.min((spentThisMonth / savedBudget) * 100, 100) : 0;
+  const remaining = Math.max(savedBudget - totalSpent, 0);
+  const usage = savedBudget > 0 ? Math.min((totalSpent / savedBudget) * 100, 100) : 0;
   const normalizedDraft = draftBudget.trim() === "" ? 0 : Number(draftBudget);
   const canSave = Number.isFinite(normalizedDraft) && normalizedDraft !== savedBudget;
 
@@ -97,7 +85,7 @@ export function BudgetCard({ transactions, budget = 0, onSaveBudget }) {
       </div>
 
       <div className="profile-divider" />
-      <BudgetStatRow icon="bolt" label="Spent" sublabel="This month" value={formatCurrency(spentThisMonth)} tone="expense" />
+      <BudgetStatRow icon="bolt" label="Spent" sublabel="This month" value={formatCurrency(totalSpent)} tone="expense" />
       <div className="profile-divider" />
       <BudgetStatRow icon="home" label="Remaining" sublabel="This month" value={formatCurrency(remaining)} tone="income" />
     </div>
