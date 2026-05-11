@@ -44,7 +44,7 @@ input, textarea, select { font-family: inherit; font-size: 16px; }
 /* ── Shell ─────────────────────────────────────────────────────────────── */
 
 .app-frame {
-  width: 100%; max-width: 480px; height: 100%;
+  width: 100%; max-width: 480px; height: 100%; min-height: 0;
   display: flex; flex-direction: column; position: relative; background: var(--bg);
   margin: 0 auto;
 }
@@ -86,7 +86,7 @@ input, textarea, select { font-family: inherit; font-size: 16px; }
 /* ── Main Content ───────────────────────────────────────────────────────── */
 
 .app-main {
-  flex: 1; overflow-y: auto; overflow-x: hidden;
+  flex: 1; overflow-y: auto; overflow-x: hidden; min-height: 0;
   -webkit-overflow-scrolling: touch; 
   padding: 4px 16px calc(var(--bottom-nav-h) + 32px); scroll-behavior: smooth;
 }
@@ -1055,11 +1055,11 @@ input, textarea, select { font-family: inherit; font-size: 16px; }
 /* ── Mobile / Desktop visibility ────────────────────────────────────────── */
 
 .desktop-shell { display: none; }
-.mobile-shell { display: flex; justify-content: center; min-height: 100vh; background: var(--bg); }
+.mobile-shell { display: flex; justify-content: center; height: 100%; width: 100%; background: var(--bg); overflow: hidden; }
 
 @media (min-width: 768px) {
   .mobile-shell { display: none; }
-  .desktop-shell { display: flex; min-height: 100vh; width: 100%; }
+  .desktop-shell { display: flex; height: 100%; width: 100%; overflow: hidden; }
 }
 
 /* ── Mobile Drawer ─────────────────────────────────────────────────────── */
@@ -1187,7 +1187,7 @@ input, textarea, select { font-family: inherit; font-size: 16px; }
 
 /* ── Desktop Body ────────────────────────────────────────────────────────── */
 
-.desktop-body { flex: 1; display: flex; flex-direction: column; min-width: 0; background: var(--bg); }
+.desktop-body { flex: 1; display: flex; flex-direction: column; min-width: 0; background: var(--bg); height: 100%; overflow: hidden; }
 
 .desktop-header {
   height: 64px; display: flex; align-items: center; justify-content: space-between;
@@ -1231,7 +1231,7 @@ input, textarea, select { font-family: inherit; font-size: 16px; }
 
 .desktop-user-name { font-size: 13px; font-weight: 600; color: var(--text); }
 
-.desktop-main { flex: 1; padding: 32px 36px; overflow-y: auto; }
+.desktop-main { flex: 1; padding: 32px 36px; overflow-y: auto; min-height: 0; }
 
 /* ── Desktop screen layout overrides ────────────────────────────────────── */
 
