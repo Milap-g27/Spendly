@@ -63,17 +63,16 @@ function getRelativeLabel(dateValue) {
   return formatShortDate(dateValue);
 }
 
-/* ── SwipeableRow ─────────────────────────────────────────────── */
-function SwipeableRow({ children, onDelete, disableSwipe }) {
-  const [offset, setOffset] = useState(0);
-  const [isSwiping, setIsSwiping] = useState(false);
+/* ── TransactionRow Extract ─────────────────────────────────────── */
+function TransactionRow({ item, selectMode, isSelected, onToggleSelect, onSwipeRight, onSettle }) {
+  const meta = getCategoryMeta(item.category);
+  const isLendOrBorrow = item.category === "Lend" || item.category === "Borrow";
+  const outstanding = item.outstanding || 0;
+  const isFullySettled = outstanding === 0 && item.totalSettled > 0;
+  
   const startX = useRef(0);
   const currentX = useRef(0);
-
-  const SWIPE_THRESHOLD = -60;
-
   const isInteractiveElement = (target) => {
-    // Don't swipe if clicking on buttons, links, or inputs
     return (
       target.tagName === 'BUTTON' ||
       target.tagName === 'A' ||
@@ -83,97 +82,26 @@ function SwipeableRow({ children, onDelete, disableSwipe }) {
     );
   };
 
-  const onTouchStart = (e) => {
-    if (disableSwipe || isInteractiveElement(e.target)) return;
-    setIsSwiping(true);
+  const handleTouchStart = (e) => {
+    if (selectMode || isInteractiveElement(e.target)) return;
     startX.current = e.touches ? e.touches[0].clientX : e.clientX;
+    currentX.current = 0;
   };
 
-  const onTouchMove = (e) => {
-    if (!isSwiping || disableSwipe) return;
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const diff = clientX - startX.current;
-    if (diff < 0) {
-      currentX.current = Math.max(diff, -100);
-      setOffset(currentX.current);
-    } else {
-      currentX.current = 0;
-      setOffset(0);
-    }
-  };
-
-  const onTouchEnd = () => {
-    if (!isSwiping) return;
-    setIsSwiping(false);
-    if (currentX.current < SWIPE_THRESHOLD) {
-      setOffset(-80); // Snap open
-    } else {
-      setOffset(0); // Snap close
-      currentX.current = 0;
-    }
-  };
-
-  useEffect(() => {
-    if (disableSwipe && offset !== 0) {
-      setOffset(0);
-      currentX.current = 0;
-    }
-  }, [disableSwipe, offset]);
-
-  return (
-    <div className="swipeable-container" onMouseLeave={onTouchEnd}>
-      <div 
-        className="swipeable-actions" 
-        style={{ opacity: offset < 0 ? 1 : 0 }}
-      >
-        <button 
-          className="swipeable-delete-btn"
-          onClick={(e) => { e.stopPropagation(); onDelete(); setOffset(0); }}
-        >
-          <Icon name="trash" size={24} color="#fff" />
-        </button>
-      </div>
-      <div 
-        className="swipeable-content"
-        style={{ transform: `translateX(${offset}px)` }}
-        onMouseDown={onTouchStart}
-        onMouseMove={onTouchMove}
-        onMouseUp={onTouchEnd}
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
-      >
-        {children}
-      </div>
-    </div>
-  );
-}
-
-/* ── TransactionRow Extract ─────────────────────────────────────── */
-function TransactionRow({ item, selectMode, isSelected, onToggleSelect, onLongPress, onDeleteSingle, onSettle }) {
-  const meta = getCategoryMeta(item.category);
-  const timerRef = useRef(null);
-  const isLendOrBorrow = item.category === "Lend" || item.category === "Borrow";
-  const outstanding = item.outstanding || 0;
-  const isFullySettled = outstanding === 0 && item.totalSettled > 0;
-  
-  const startLongPress = () => {
+  const handleTouchMove = (e) => {
     if (selectMode) return;
-    timerRef.current = setTimeout(() => {
-      onLongPress(item.id);
-    }, 200);
-  };
-  const cancelLongPress = () => {
-    if (timerRef.current) clearTimeout(timerRef.current);
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    currentX.current = clientX - startX.current;
   };
 
-  const handleMouseDown = (e) => {
-    // Don't trigger long press if clicking buttons or interactive elements
-    if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
-      cancelLongPress();
-      return;
+  const handleTouchEnd = () => {
+    if (selectMode) return;
+    const SWIPE_THRESHOLD = 60; // left to right
+    if (currentX.current > SWIPE_THRESHOLD) {
+      onSwipeRight(item.id);
     }
-    startLongPress();
+    startX.current = 0;
+    currentX.current = 0;
   };
 
   const handleClick = (e) => {
@@ -184,75 +112,75 @@ function TransactionRow({ item, selectMode, isSelected, onToggleSelect, onLongPr
   };
 
   return (
-    <SwipeableRow onDelete={() => onDeleteSingle(item)} disableSwipe={selectMode}>
-      <div 
-        className={`transaction-row compact ${isSelected ? 'selected' : ''}`}
-        onMouseDown={handleMouseDown}
-        onMouseUp={cancelLongPress}
-        onMouseLeave={cancelLongPress}
-        onTouchStart={handleMouseDown}
-        onTouchEnd={cancelLongPress}
-        onClick={handleClick}
-        style={{ paddingLeft: selectMode ? 44 : undefined, transition: "padding 0.2s" }}
-      >
-        {selectMode && (
-          <div className="tx-checkbox-container">
-            <div className={`tx-checkbox ${isSelected ? "checked" : ""}`}>
-              {isSelected && (
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-              )}
-            </div>
-          </div>
-        )}
-
-        <div className="icon-circle" style={{ backgroundColor: meta.icon }}>
-          <span style={{ color: meta.color }}>
-            <Icon name={item.icon} size={20}/>
-          </span>
-        </div>
-        <div className="transaction-info">
-          <p className="transaction-title">{item.description}</p>
-          <div className="category-bar-wrap" style={{ width: "100%", display: "flex", alignItems: "center", gap: "8px" }}>
-            <div
-              className="category-bar"
-              style={{ backgroundColor: meta.chip, width: "100%" }}
-            />
-            <span className="category-pill">{item.category}</span>
-            {isLendOrBorrow && (
-              <>
-                {isFullySettled && <span className="tx-settled-badge">✓ Settled</span>}
-                {outstanding > 0 && (
-                  <span className="tx-outstanding-badge">
-                    {formatCurrency(outstanding)} outstanding
-                  </span>
-                )}
-              </>
+    <div 
+      className={`transaction-row compact ${isSelected ? 'selected' : ''}`}
+      onMouseDown={handleTouchStart}
+      onMouseMove={handleTouchMove}
+      onMouseUp={handleTouchEnd}
+      onMouseLeave={handleTouchEnd}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onClick={handleClick}
+      style={{ paddingLeft: selectMode ? 44 : undefined, transition: "padding 0.2s" }}
+    >
+      {selectMode && (
+        <div className="tx-checkbox-container">
+          <div className={`tx-checkbox ${isSelected ? "checked" : ""}`}>
+            {isSelected && (
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
             )}
           </div>
         </div>
-        <div className="transaction-amount-wrapper">
-          {isLendOrBorrow && !selectMode && (
-            <button 
-              className="tx-settle-btn" 
-              onClick={(e) => { 
-                e.preventDefault();
-                e.stopPropagation(); 
-                onSettle(item); 
-              }}
-              title="Settle transaction"
-            >
-              Settle
-            </button>
+      )}
+
+      <div className="icon-circle" style={{ backgroundColor: meta.icon }}>
+        <span style={{ color: meta.color }}>
+          <Icon name={item.icon} size={20}/>
+        </span>
+      </div>
+      <div className="transaction-info">
+        <p className="transaction-title">{item.description}</p>
+        <div className="category-bar-wrap" style={{ width: "100%", display: "flex", alignItems: "center", gap: "8px" }}>
+          <div
+            className="category-bar"
+            style={{ backgroundColor: meta.chip, width: "100%" }}
+          />
+          <span className="category-pill">{item.category}</span>
+          {isLendOrBorrow && (
+            <>
+              {isFullySettled && <span className="tx-settled-badge">✓ Settled</span>}
+              {outstanding > 0 && (
+                <span className="tx-outstanding-badge">
+                  {formatCurrency(outstanding)} outstanding
+                </span>
+              )}
+            </>
           )}
-          <div className={`transaction-amount ${item.type === 'income' ? 'income' : 'expense'}`}>
-            <span className="sign">{item.type === 'income' ? '+' : '–'}</span>
-            <span>{isLendOrBorrow ? formatCurrency(outstanding) : formatCurrency(item.amount)}</span>
-          </div>
         </div>
       </div>
-    </SwipeableRow>
+      <div className="transaction-amount-wrapper">
+        {isLendOrBorrow && !selectMode && (
+          <button 
+            className="tx-settle-btn" 
+            onClick={(e) => { 
+              e.preventDefault();
+              e.stopPropagation(); 
+              onSettle(item); 
+            }}
+            title="Settle transaction"
+          >
+            Settle
+          </button>
+        )}
+        <div className={`transaction-amount ${item.type === 'income' ? 'income' : 'expense'}`}>
+          <span className="sign">{item.type === 'income' ? '+' : '–'}</span>
+          <span>{isLendOrBorrow ? formatCurrency(outstanding) : formatCurrency(item.amount)}</span>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -321,7 +249,7 @@ export function TransactionsScreen({ transactions, search, setSearch, activeFilt
   };
 
   /* Actions */
-  const handleLongPress = (id) => {
+  const handleSwipeRight = (id) => {
     setSelectMode(true);
     setSelectedIds(new Set([id]));
   };
@@ -331,6 +259,12 @@ export function TransactionsScreen({ transactions, search, setSearch, activeFilt
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
+      
+      // Auto-exit select mode if empty
+      if (next.size === 0) {
+        setSelectMode(false);
+      }
+      
       return next;
     });
   };
@@ -338,10 +272,6 @@ export function TransactionsScreen({ transactions, search, setSearch, activeFilt
   const handleDeleteSelected = () => {
     const items = transactions.filter(t => selectedIds.has(t.id));
     executeSoftDelete(items);
-  };
-
-  const handleDeleteSingle = (item) => {
-    executeSoftDelete([item]);
   };
 
   const handleUndo = () => {
@@ -504,10 +434,18 @@ export function TransactionsScreen({ transactions, search, setSearch, activeFilt
 
       {/* Selection Top Bar */}
       {selectMode && (
-        <div className="selection-topbar" style={{ marginBottom: "20px", borderRadius: "12px" }}>
-          <div className="selection-topbar-inner">
-            <span className="selection-count">{selectedIds.size} selected</span>
+        <div className="selection-topbar" style={{ marginBottom: "20px", borderRadius: "12px", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 16px", backgroundColor: "var(--card-bg)" }}>
+          <div className="selection-topbar-inner" style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
             <button className="selection-cancel-btn" onClick={cancelSelectMode}>Cancel</button>
+            <span className="selection-count">{selectedIds.size} selected</span>
+            <button 
+              className="selection-delete-btn" 
+              onClick={handleDeleteSelected}
+              disabled={selectedIds.size === 0}
+              style={{ color: "var(--delete-red, #ff4d4f)", fontWeight: "600", background: "none", border: "none", fontSize: "16px", cursor: "pointer", opacity: selectedIds.size === 0 ? 0.5 : 1 }}
+            >
+              Delete
+            </button>
           </div>
         </div>
       )}
@@ -528,28 +466,13 @@ export function TransactionsScreen({ transactions, search, setSearch, activeFilt
                 selectMode={selectMode}
                 isSelected={selectedIds.has(item.id)}
                 onToggleSelect={handleToggleSelect}
-                onLongPress={handleLongPress}
-                onDeleteSingle={handleDeleteSingle}
+                onSwipeRight={handleSwipeRight}
                 onSettle={handleSettleOpen}
               />
             ))}
           </section>
         ))}
       </div>
-
-      {/* Floating Delete Selected Button */}
-      {selectMode && (
-        <div className="floating-delete-container">
-          <button 
-            className="floating-delete-btn"
-            disabled={selectedIds.size === 0}
-            onClick={handleDeleteSelected}
-          >
-            <Icon name="trash" size={20} color="#fff" />
-            Delete Selected
-          </button>
-        </div>
-      )}
 
       {/* Undo Snackbar */}
       {pendingDelete.length > 0 && (
