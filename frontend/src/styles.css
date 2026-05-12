@@ -264,7 +264,22 @@ input, textarea, select { font-family: inherit; font-size: 16px; }
 .filter-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
 .filter-row::-webkit-scrollbar { display: none; }
 
-.filter-pill {
+.transactions-sticky-header {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: var(--bg);
+    padding: 8px 0 8px;
+    margin: 0;
+  }
+
+.desktop-main .transactions-sticky-header {
+    top: 0;
+    margin: 0;
+    padding: 0;
+    }
+
+  .filter-pill {
   padding: 7px 16px; border-radius: 999px; background: var(--card);
   border: 1px solid var(--border); color: var(--text);
   font-size: 13px; font-weight: 500; white-space: nowrap; box-shadow: var(--shadow);
@@ -2688,26 +2703,13 @@ input, textarea, select { font-family: inherit; font-size: 16px; }
 
 /* ── Selection Top Bar ───────────────────────────────────────── */
 .selection-topbar {
-  position: fixed;
-  top: calc(var(--header-h, 60px) + 12px);
-  left: 50%;
-  transform: translateX(-50%);
-  width: calc(100% - 32px);
-  max-width: 448px;
-  z-index: 200;
   padding: 14px 20px;
   background-color: var(--card);
   border: 1px solid var(--border);
-  box-shadow: var(--shadow-card), 0 8px 30px rgba(0,0,0,0.12);
   border-radius: 12px;
+  box-shadow: var(--shadow-card);
   animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@media (min-width: 768px) {
-  .selection-topbar {
-    top: 80px;
-    max-width: 600px;
-  }
+  margin-top: 0;
 }
 
 .selection-topbar-inner {
@@ -2984,3 +2986,6 @@ input, textarea, select { font-family: inherit; font-size: 16px; }
 .toast-info .toast-close { color: #1e40af; }
 .toast-info .toast-undo:hover  { background: rgba(30,64,175,0.1); }
 .toast-info .toast-close:hover { background: rgba(30,64,175,0.1); }
+
+
+

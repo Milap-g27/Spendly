@@ -354,20 +354,21 @@ export function TransactionsScreen({ transactions, search, setSearch, activeFilt
         <h2 className="page-title">All Transactions</h2>
       </div>
 
-      <div className="search-bar">
-        <Icon name="search" size={18}/>
-        <input
-          type="text"
-          placeholder="Search transactions"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          disabled={selectMode}
-        />
-      </div>
+      <div className="transactions-sticky-header">
+        <div className="search-bar">
+          <Icon name="search" size={18}/>
+          <input
+            type="text"
+            placeholder="Search transactions"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            disabled={selectMode}
+          />
+        </div>
 
-      <div className="filter-bar-ref" style={{ opacity: selectMode ? 0.5 : 1, pointerEvents: selectMode ? 'none' : 'auto' }}>
-        <div className="filter-presets-desktop hide-on-mobile" style={{ display: 'flex', width: '100%', flexWrap: 'wrap', gap: '12px' }}>
-          <div className="filter-presets-ref">
+        <div className="filter-bar-ref" style={{ opacity: selectMode ? 0.5 : 1, pointerEvents: selectMode ? 'none' : 'auto', marginBottom: selectMode ? '16px' : 0 }}>
+          <div className="filter-presets-desktop hide-on-mobile" style={{ display: 'flex', width: '100%', flexWrap: 'wrap', gap: '12px' }}>
+            <div className="filter-presets-ref">
             {filterTabs.filter(t => t !== "Custom").map((tab) => (
               <button
                 key={tab}
@@ -434,7 +435,7 @@ export function TransactionsScreen({ transactions, search, setSearch, activeFilt
 
       {/* Selection Top Bar */}
       {selectMode && (
-        <div className="selection-topbar" style={{ position: "sticky", top: "20px", zIndex: 50, marginBottom: "20px", borderRadius: "12px", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 16px", backgroundColor: "var(--card-bg)", boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)" }}>
+        <div className="selection-topbar">
           <div className="selection-topbar-inner" style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
             <button className="selection-cancel-btn" onClick={cancelSelectMode}>Cancel</button>
             <span className="selection-count">{selectedIds.size} selected</span>
@@ -449,6 +450,7 @@ export function TransactionsScreen({ transactions, search, setSearch, activeFilt
           </div>
         </div>
       )}
+      </div>
 
       <div className="transaction-groups">
         {Object.entries(groups).map(([label, items]) => (
