@@ -72,6 +72,7 @@ function TransactionRow({ item, selectMode, isSelected, onToggleSelect, onSwipeR
   
   const startX = useRef(0);
   const currentX = useRef(0);
+  const isTracking = useRef(false);
   const isInteractiveElement = (target) => {
     return (
       target.tagName === 'BUTTON' ||
@@ -84,18 +85,20 @@ function TransactionRow({ item, selectMode, isSelected, onToggleSelect, onSwipeR
 
   const handleTouchStart = (e) => {
     if (selectMode || isInteractiveElement(e.target)) return;
+    isTracking.current = true;
     startX.current = e.touches ? e.touches[0].clientX : e.clientX;
     currentX.current = 0;
   };
 
   const handleTouchMove = (e) => {
-    if (selectMode) return;
+    if (selectMode || !isTracking.current) return;
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     currentX.current = clientX - startX.current;
   };
 
   const handleTouchEnd = () => {
-    if (selectMode) return;
+    if (selectMode || !isTracking.current) return;
+    isTracking.current = false;
     const SWIPE_THRESHOLD = 60; // left to right
     if (currentX.current > SWIPE_THRESHOLD) {
       onSwipeRight(item.id);
