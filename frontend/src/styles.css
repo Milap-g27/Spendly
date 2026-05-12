@@ -2793,7 +2793,7 @@ input, textarea, select { font-family: inherit; font-size: 16px; }
   background-color: #fff1f2;
   border: 1px solid #fecdd3;
   border-radius: 8px;
-  z-index: 100;
+  z-index: 10001;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -2865,7 +2865,7 @@ input, textarea, select { font-family: inherit; font-size: 16px; }
   bottom: 70px;
   left: 0;
   right: 0;
-  z-index: 9999;
+  z-index: 10001;
   pointer-events: none;
   display: flex;
   justify-content: center;
