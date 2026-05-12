@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { formatCurrency, formatShortDate, getCategoryMeta } from "../lib/utils";
 import { filterTabs } from "../lib/constants";
 import { Icon } from "./Icons";
@@ -479,8 +480,8 @@ export function TransactionsScreen({ transactions, search, setSearch, activeFilt
         ))}
       </div>
 
-      {/* Undo Snackbar */}
-      {pendingDelete.length > 0 && (
+      {/* Undo Snackbar (portal to body so it escapes stacking contexts) */}
+      {pendingDelete.length > 0 && createPortal(
         <div className={`undo-snackbar ${snackbarVisible ? "is-visible" : ""}`}>
           <div className="undo-snackbar-content">
             <span>{pendingDelete.length} transaction{pendingDelete.length > 1 ? 's' : ''} deleted</span>
@@ -490,7 +491,8 @@ export function TransactionsScreen({ transactions, search, setSearch, activeFilt
             {/* The timer progress animates using CSS */}
             <div className="undo-progress-fill" key={pendingDelete.length} />
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Settle Panel */}

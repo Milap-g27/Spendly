@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 export function Toast({ id, message, type = "info", duration = 3000, onDismiss, onUndo }) {
   const [isVisible, setIsVisible] = useState(true);
@@ -63,7 +64,7 @@ export function Toast({ id, message, type = "info", duration = 3000, onDismiss, 
 
 export function ToastContainer({ toasts, onDismiss }) {
   const activeToast = toasts[toasts.length - 1];
-  return (
+  const toastNode = (
     <div className="toast-container">
       {activeToast && (
         <Toast
@@ -78,4 +79,6 @@ export function ToastContainer({ toasts, onDismiss }) {
       )}
     </div>
   );
+
+  return createPortal(toastNode, document.body);
 }
