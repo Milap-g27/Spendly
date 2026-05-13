@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useLayoutEffect } from "react";
+import { createPortal } from "react-dom";
 import { Icon } from "./Icons";
 import { edgeFetch } from "../lib/utils";
 import { supabase } from "../lib/supabaseClient";
@@ -84,11 +85,66 @@ function CustomSelect({ value, options, placeholder, onChange }) {
 
 const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const DAY_LABELS = ["Mo","Tu","We","Th","Fr","Sa","Su"];
+const CALENDAR_EDGE_GAP = 12;
+const CALENDAR_POPUP_GAP = 6;
+const CALENDAR_POPUP_WIDTH = 240;
 
-function CalendarPopup({ selectedISO, onSelect, onClose }) {
+function CalendarPopup({ selectedISO, onSelect, onClose, anchorRef }) {
   const [viewYear, setViewYear] = useState(() => parseInt(selectedISO.slice(0, 4)));
   const [viewMonth, setViewMonth] = useState(() => parseInt(selectedISO.slice(5, 7)) - 1);
   const ref = useRef(null);
+  const [popupStyle, setPopupStyle] = useState({ visibility: "hidden" });
+
+  const updatePosition = () => {
+    const anchorEl = anchorRef?.current;
+    const popupEl = ref.current;
+    if (!anchorEl || !popupEl) return;
+
+    const anchorRect = anchorEl.getBoundingClientRect();
+    const popupRect = popupEl.getBoundingClientRect();
+    const popupWidth = popupRect.width || CALENDAR_POPUP_WIDTH;
+    const popupHeight = popupRect.height || 280;
+    const headerEl = document.querySelector(".app-header, .desktop-header");
+    const bottomNavEl = document.querySelector(".bottom-nav");
+    const topInset = headerEl ? headerEl.getBoundingClientRect().bottom + CALENDAR_EDGE_GAP : CALENDAR_EDGE_GAP;
+    const bottomInset = bottomNavEl ? bottomNavEl.getBoundingClientRect().height + CALENDAR_EDGE_GAP : CALENDAR_EDGE_GAP;
+
+    const spaceBelow = window.innerHeight - bottomInset - anchorRect.bottom - CALENDAR_POPUP_GAP;
+    const spaceAbove = anchorRect.top - topInset - CALENDAR_POPUP_GAP;
+    const openAbove = spaceBelow < popupHeight && spaceAbove > spaceBelow;
+
+    const top = openAbove
+      ? Math.max(topInset, anchorRect.top - CALENDAR_POPUP_GAP - popupHeight)
+      : Math.min(anchorRect.bottom + CALENDAR_POPUP_GAP, window.innerHeight - bottomInset - popupHeight);
+
+    const left = Math.min(
+      Math.max(anchorRect.right - popupWidth, CALENDAR_EDGE_GAP),
+      window.innerWidth - popupWidth - CALENDAR_EDGE_GAP
+    );
+
+    setPopupStyle({
+      position: "fixed",
+      top: `${Math.round(top)}px`,
+      left: `${Math.round(left)}px`,
+      width: `${Math.round(popupWidth)}px`,
+      right: "auto",
+      bottom: "auto",
+      visibility: "visible",
+    });
+  };
+
+  useLayoutEffect(() => {
+    updatePosition();
+
+    const handleViewportChange = () => updatePosition();
+    window.addEventListener("resize", handleViewportChange);
+    window.addEventListener("scroll", handleViewportChange, true);
+
+    return () => {
+      window.removeEventListener("resize", handleViewportChange);
+      window.removeEventListener("scroll", handleViewportChange, true);
+    };
+  }, [anchorRef, viewMonth, viewYear]);
 
   /* Close on outside click */
   useEffect(() => {
@@ -119,8 +175,8 @@ function CalendarPopup({ selectedISO, onSelect, onClose }) {
 
   const pad = n => String(n).padStart(2, "0");
 
-  return (
-    <div className="cal-popup" ref={ref}>
+  return createPortal(
+    <div className="cal-popup" ref={ref} style={popupStyle}>
       {/* Header */}
       <div className="cal-header">
         <button type="button" className="cal-nav" onClick={prevMonth}>‹</button>
@@ -158,7 +214,8 @@ function CalendarPopup({ selectedISO, onSelect, onClose }) {
         <button type="button" className="cal-footer-btn" onClick={() => { onSelect(""); onClose(); }}>Clear</button>
         <button type="button" className="cal-footer-btn cal-footer-today" onClick={() => { onSelect(todayISO); onClose(); }}>Today</button>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -177,6 +234,7 @@ export function AddTransactionScreen({ session, navigate, setTransactions, addTo
   const [error, setError]           = useState("");
   const [allCategories, setAllCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
+  const dateFieldRef = useRef(null);
 
   // Fetch categories from database
   useEffect(() => {
@@ -351,12 +409,16 @@ export function AddTransactionScreen({ session, navigate, setTransactions, addTo
             {/* Transaction Date — click to open custom calendar */}
             <div className="at-form-group at-half" style={{ position: "relative" }}>
               <label className="at-form-label">Transaction date</label>
-              <div className="at-input-wrapper at-date-field" onClick={() => setCalOpen(!calOpen)}>
+              <div
+                className="at-input-wrapper at-date-field"
+                ref={dateFieldRef}
+                onClick={() => setCalOpen((open) => !open)}
+              >
                 <span className="at-date-display">{displayDate}</span>
                 <button
                   type="button"
                   className="at-date-cal-btn"
-                  onClick={e => { e.stopPropagation(); setCalOpen(!calOpen); }}
+                  onClick={e => { e.stopPropagation(); setCalOpen((open) => !open); }}
                   aria-label="Open calendar"
                 >
                   <Icon name="calendar" size={20} />
@@ -369,6 +431,7 @@ export function AddTransactionScreen({ session, navigate, setTransactions, addTo
                   selectedISO={dateISO}
                   onSelect={setDateISO}
                   onClose={() => setCalOpen(false)}
+                  anchorRef={dateFieldRef}
                 />
               )}
             </div>
