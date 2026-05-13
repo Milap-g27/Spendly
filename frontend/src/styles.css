@@ -2084,24 +2084,14 @@ input, textarea, select { font-family: inherit; font-size: 16px; }
   position: absolute;
   top: calc(100% + 6px);
   right: 0;
-  width: 280px;
+  width: 240px;
   background: var(--card);
-  border-radius: 14px;
+  border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.15);
   border: 1px solid var(--border);
   z-index: 200;
-  padding: 16px;
+  padding: 10px;
   animation: dropdownFadeIn 0.15s ease-out;
-}
-
-/* On small screens, anchor to the left edge of the card instead */
-@media (max-width: 480px) {
-  .cal-popup {
-    right: auto;
-    left: -100%;
-    width: calc(100vw - 48px);
-    max-width: 320px;
-  }
 }
 
 .cal-header {
@@ -2112,7 +2102,7 @@ input, textarea, select { font-family: inherit; font-size: 16px; }
 }
 
 .cal-title {
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--text);
 }
@@ -2120,12 +2110,12 @@ input, textarea, select { font-family: inherit; font-size: 16px; }
 .cal-nav {
   background: none;
   border: none;
-  font-size: 20px;
+  font-size: 16px;
   color: var(--accent);
   cursor: pointer;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2143,11 +2133,11 @@ input, textarea, select { font-family: inherit; font-size: 16px; }
 }
 
 .cal-day-labels span {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   color: var(--muted);
   text-transform: uppercase;
-  padding: 4px 0;
+  padding: 2px 0;
   letter-spacing: 0.3px;
 }
 
@@ -2158,7 +2148,7 @@ input, textarea, select { font-family: inherit; font-size: 16px; }
 .cal-day {
   background: none;
   border: none;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--text);
   width: 100%;
