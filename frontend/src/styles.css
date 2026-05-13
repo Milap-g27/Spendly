@@ -2081,16 +2081,16 @@ input, textarea, select { font-family: inherit; font-size: 16px; }
 /* ── Custom Calendar Popup ──────────────────────────────────── */
 
 .cal-popup {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
+  position: fixed;
   width: 240px;
   background: var(--card);
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.15);
   border: 1px solid var(--border);
-  z-index: 200;
+  z-index: 260;
   padding: 10px;
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
   animation: dropdownFadeIn 0.15s ease-out;
 }
 
@@ -2218,12 +2218,34 @@ input, textarea, select { font-family: inherit; font-size: 16px; }
   max-width: 440px;
   max-height: 85vh;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   background: var(--card);
   border-radius: 18px;
   border: 1px solid var(--border);
   box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25);
   padding: 14px;
   animation: settle-slide-up 0.3s ease-out;
+}
+
+@media (max-width: 767px) {
+  .settle-panel-overlay {
+    padding: 12px 12px calc(var(--bottom-nav-h) + env(safe-area-inset-bottom) + 12px);
+  }
+
+  .settle-panel-modal {
+    max-height: calc(100dvh - var(--header-h) - var(--bottom-nav-h) - 24px);
+  }
+
+  .toast-container {
+    bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom) + 12px);
+  }
+}
+
+@media (min-width: 768px) {
+  .toast-container {
+    bottom: 24px;
+  }
 }
 
 @keyframes settle-slide-up {
@@ -2852,7 +2874,6 @@ input, textarea, select { font-family: inherit; font-size: 16px; }
 /* ── Toast Notifications ─────────────────────────────────────── */
 .toast-container {
   position: fixed;
-  bottom: 70px;
   left: 0;
   right: 0;
   z-index: 10001;
