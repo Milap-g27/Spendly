@@ -2200,7 +2200,7 @@ input, textarea, select { font-family: inherit; font-size: 16px; }
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  padding: 14px;
+  padding: 8px;
   animation: settle-fade-in 0.2s ease-out;
 }
 
@@ -2216,13 +2216,13 @@ input, textarea, select { font-family: inherit; font-size: 16px; }
 .settle-panel-modal {
   width: 100%;
   max-width: 440px;
-  max-height: calc(100vh - 28px);
+  max-height: 85vh;
   overflow-y: auto;
   background: var(--card);
   border-radius: 18px;
   border: 1px solid var(--border);
   box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25);
-  padding: 18px;
+  padding: 14px;
   animation: settle-slide-up 0.3s ease-out;
 }
 
@@ -2241,8 +2241,8 @@ input, textarea, select { font-family: inherit; font-size: 16px; }
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 18px;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
 .settle-panel-eyebrow {
@@ -2255,7 +2255,7 @@ input, textarea, select { font-family: inherit; font-size: 16px; }
 }
 
 .settle-panel-title {
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.4px;
 }
@@ -2281,8 +2281,8 @@ input, textarea, select { font-family: inherit; font-size: 16px; }
 .settle-panel-info {
   background: #f8fafc;
   border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 20px;
+  padding: 10px;
+  margin-bottom: 12px;
 }
 
 .settle-calculation {
@@ -2295,9 +2295,9 @@ input, textarea, select { font-family: inherit; font-size: 16px; }
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 12px;
+  padding: 8px 10px;
   background: white;
-  border-radius: 10px;
+  border-radius: 8px;
   border: 1px solid var(--border);
 }
 
@@ -2395,7 +2395,7 @@ input, textarea, select { font-family: inherit; font-size: 16px; }
 .settle-form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 10px;
 }
 
 .settle-field {
@@ -2427,13 +2427,13 @@ input, textarea, select { font-family: inherit; font-size: 16px; }
 
 .settle-amount-input {
   width: 100%;
-  min-height: 50px;
+  min-height: 44px;
   padding: 0 14px 0 38px;
-  border-radius: 14px;
+  border-radius: 12px;
   border: 1px solid var(--border);
   background: #fbfcff;
   outline: none;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
 }
 
@@ -2450,9 +2450,9 @@ input, textarea, select { font-family: inherit; font-size: 16px; }
 
 .settle-note-input {
   width: 100%;
-  min-height: 50px;
+  min-height: 44px;
   padding: 0 14px;
-  border-radius: 14px;
+  border-radius: 12px;
   border: 1px solid var(--border);
   background: #fbfcff;
   outline: none;
@@ -2520,13 +2520,13 @@ input, textarea, select { font-family: inherit; font-size: 16px; }
 .settle-actions {
   display: flex;
   gap: 10px;
-  margin-top: 8px;
+  margin-top: 4px;
 }
 
 .settle-btn {
-  min-height: 46px;
-  padding: 0 16px;
-  border-radius: 12px;
+  min-height: 42px;
+  padding: 0 14px;
+  border-radius: 10px;
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
