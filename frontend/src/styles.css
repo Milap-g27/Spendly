@@ -2228,13 +2228,18 @@ input, textarea, select { font-family: inherit; font-size: 16px; }
   animation: settle-slide-up 0.3s ease-out;
 }
 
+body.settle-panel-open .fab,
+body.settle-panel-open .fab-popup {
+  display: none !important;
+}
+
 @media (max-width: 767px) {
   .settle-panel-overlay {
-    padding: 12px 12px calc(var(--bottom-nav-h) + env(safe-area-inset-bottom) + 12px);
+    padding: 12px 12px calc(var(--bottom-nav-h) + env(safe-area-inset-bottom) + 36px);
   }
 
   .settle-panel-modal {
-    max-height: calc(100dvh - var(--header-h) - var(--bottom-nav-h) - 24px);
+    max-height: calc(100dvh - var(--header-h) - var(--bottom-nav-h) - env(safe-area-inset-bottom) - 36px);
   }
 
   .toast-container {

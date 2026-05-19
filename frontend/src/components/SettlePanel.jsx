@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { formatCurrency } from "../lib/utils";
 import { validateSettleAmount } from "../lib/settleUtils";
 import { Icon } from "./Icons";
@@ -8,6 +8,11 @@ export function SettlePanel({ transaction, onClose, onSettle, isLoading = false 
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    document.body.classList.add("settle-panel-open");
+    return () => document.body.classList.remove("settle-panel-open");
+  }, []);
 
   if (!transaction) return null;
 
