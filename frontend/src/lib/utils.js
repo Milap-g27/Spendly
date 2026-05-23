@@ -16,7 +16,9 @@ export async function edgeFetch(path, { method = "GET", body, token } = {}) {
     throw new Error(text || `Error ${response.status}`);
   }
   return response.json();
-}export function formatCurrency(value) {
+}
+
+export function formatCurrency(value) {
   const currencyFormatter = new Intl.NumberFormat("en-IN", {
     style: "currency", currency: "INR", maximumFractionDigits: 2,
   });
@@ -37,6 +39,7 @@ export function getRouteFromHash() {
   if (clean.startsWith("privacy")) return "privacy";
   if (clean.startsWith("terms")) return "terms";
   if (clean.startsWith("add")) return "add";
+  if (clean.startsWith("groups")) return "groups";
   return "dashboard";
 }
 

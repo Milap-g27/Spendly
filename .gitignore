@@ -54,8 +54,13 @@ typings/
 .env.development.local
 .env.test.local
 .env.production.local
-**/ .env*
+**/.env*
 frontend/.env
+frontend/.env.development
+frontend/.env.*
+
+# Local dev/test scripts (may contain secrets)
+frontend/test_dev_db_admin.js
 
 # next.js build output
 .next/

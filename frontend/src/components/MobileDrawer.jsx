@@ -2,7 +2,7 @@ const MOBILE_LINKS = [
   { label: "Dashboard", value: "dashboard" },
   { label: "Transactions", value: "transactions" },
   { label: "Insights", value: "insights" },
-  { label: "Budgets", value: "budgets" },
+  { label: "Groups", value: "groups" },
   { label: "Profile", value: "profile" },
 ];
 

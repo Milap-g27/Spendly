@@ -4,7 +4,10 @@ import { filterTabs } from "./lib/constants";
 import { getRouteFromHash, edgeFetch, formatCurrency, getCategoryMeta, attachIcons } from "./lib/utils";
 import { useAuth } from "./hooks/useAuth";
 import { useTransactions } from "./hooks/useTransactions";
+import { useGroups } from "./hooks/useGroups";
 import { getProfile as apiGetProfile, updateProfile as apiUpdateProfile, uploadAvatar as apiUploadAvatar } from "./services/profile";
+import { GroupsList } from "./components/groups/GroupsList";
+import { GroupDetail } from "./components/groups/GroupDetail";
 
 import { AppHeader, BottomNav, DesktopSidebar, DesktopHeader } from "./components/Layout";
 import { MobileDrawer } from "./components/MobileDrawer";
@@ -27,12 +30,14 @@ const FAB_EXAMPLES = [
 ];
 
 /* ── FAB Component ────────────────────────────────────────────────────── */
-function FAB({ session, onSaved, addToast, onUndoTransaction }) {
+function FAB({ session, onSaved, addToast, onUndoTransaction, route, currentGroupId, onGroupExpenseParsed }) {
   const [open, setOpen]       = useState(false);
   const [text, setText]       = useState("");
   const [parsed, setParsed]   = useState(null);
   const [status, setStatus]   = useState("idle"); // idle|parsing|ready|saving|done
   const [error, setError]     = useState("");
+
+  const isGroupMode = route === "groups" && !!currentGroupId;
 
   const getISTDate = (offsetDays = 0) => {
     const d = new Date();
@@ -104,6 +109,19 @@ function FAB({ session, onSaved, addToast, onUndoTransaction }) {
   const isIncome = parsed?.type === "income";
   const catMeta  = parsed ? getCategoryMeta(parsed.category) : null;
 
+  // Hide FAB on groups list (no group selected to add expense to)
+  if (route === "groups" && !currentGroupId) return null;
+
+  const handleGroupAdd = () => {
+    if (!parsed) return;
+    onGroupExpenseParsed?.({
+      amount: parsed.amount,
+      description: parsed.description,
+      date: parsed.date || today,
+    });
+    close();
+  };
+
   return (
     <>
       {/* Overlay */}
@@ -115,13 +133,13 @@ function FAB({ session, onSaved, addToast, onUndoTransaction }) {
       {/* Popup */}
       <div className={`fab-popup ${open ? "show" : ""}`}>
         <div className="fab-popup-inner">
-          <p className="fab-popup-label">Quick add</p>
-          <p className="fab-popup-title">What did you spend or earn?</p>
+          <p className="fab-popup-label">{isGroupMode ? "Group expense" : "Quick add"}</p>
+          <p className="fab-popup-title">{isGroupMode ? "What's the group expense?" : "What did you spend or earn?"}</p>
 
           <div className="fab-input-row">
             <input
               className="fab-nlp-input"
-              placeholder="Add a Transaction"
+              placeholder={isGroupMode ? "e.g. 500 for dinner" : "Add a Transaction"}
               value={text}
               onChange={(e) => { setText(e.target.value); setError(""); setParsed(null); setStatus("idle"); }}
               onKeyDown={(e) => { if (e.key === "Enter") handleParse(); }}
@@ -151,24 +169,32 @@ function FAB({ session, onSaved, addToast, onUndoTransaction }) {
 
           {/* Result preview */}
           {parsed && status !== "parsing" && (
-            <div className={`fab-result show ${isIncome ? "income" : "expense"}`}>
+            <div className={`fab-result show ${isGroupMode ? "expense" : isIncome ? "income" : "expense"}`}>
               <div className="fab-result-top">
-                <span className={`fab-result-amount ${isIncome ? "income" : "expense"}`}>
+                <span className={`fab-result-amount ${isGroupMode ? "expense" : isIncome ? "income" : "expense"}`}>
                   {formatCurrency(parsed.amount)}
                 </span>
-                <span className="type-badge" style={{
-                  background: isIncome ? "#dcfce7" : "#fee2e2",
-                  color: isIncome ? "#166534" : "#991b1b",
-                }}>
-                  {isIncome ? "↑ Income" : "↓ Expense"}
-                </span>
+                {isGroupMode ? (
+                  <span className="type-badge" style={{ background: "#ede9fe", color: "#5b21b6" }}>
+                    👥 Group
+                  </span>
+                ) : (
+                  <span className="type-badge" style={{
+                    background: isIncome ? "#dcfce7" : "#fee2e2",
+                    color: isIncome ? "#166534" : "#991b1b",
+                  }}>
+                    {isIncome ? "↑ Income" : "↓ Expense"}
+                  </span>
+                )}
               </div>
               <div className="fab-meta">
-                <span className="fab-meta-chip" style={{
-                  background: catMeta.chip, color: catMeta.color, border: "none"
-                }}>
-                  {parsed.category}
-                </span>
+                {!isGroupMode && (
+                  <span className="fab-meta-chip" style={{
+                    background: catMeta.chip, color: catMeta.color, border: "none"
+                  }}>
+                    {parsed.category}
+                  </span>
+                )}
                 <span className="fab-meta-chip">{parsed.description}</span>
                 <span className="fab-meta-chip">{
                   (() => {
@@ -180,16 +206,18 @@ function FAB({ session, onSaved, addToast, onUndoTransaction }) {
                 }</span>
               </div>
               <button
-                className={`fab-save-btn ${isIncome ? "income" : "expense"}`}
-                onClick={handleSave}
+                className={`fab-save-btn ${isGroupMode ? "expense" : isIncome ? "income" : "expense"}`}
+                onClick={isGroupMode ? handleGroupAdd : handleSave}
                 disabled={status === "saving"}
               >
-                {status === "saving" ? "Saving…" : `Save ${isIncome ? "Income" : "Expense"} →`}
+                {isGroupMode
+                  ? "Add to Group →"
+                  : status === "saving" ? "Saving…" : `Save ${isIncome ? "Income" : "Expense"} →`}
               </button>
             </div>
           )}
         </div>
-        <p className="fab-popup-tip">Powered by AI · Press Enter to parse</p>
+        <p className="fab-popup-tip">{isGroupMode ? "AI will extract amount & description" : "Powered by AI · Press Enter to parse"}</p>
       </div>
 
       {/* The + button */}
@@ -249,6 +277,18 @@ export default function App() {
     settleTransaction
   } = useTransactions(session, activeFilter);
 
+  const groupsHook = useGroups(session);
+  const [groupExpensePrefill, setGroupExpensePrefill] = useState(null);
+
+  // Parse group id from hash: #/groups/some-uuid
+  const getGroupIdFromHash = () => {
+    const raw = window.location.hash.replace("#", "");
+    const clean = raw.startsWith("/") ? raw.slice(1) : raw;
+    const match = clean.match(/^groups\/([\w-]+)/);
+    return match ? match[1] : null;
+  };
+  const [currentGroupId, setCurrentGroupId] = useState(getGroupIdFromHash);
+
   useEffect(() => {
     if (!window.location.hash) window.location.hash = "#/dashboard";
     const handleChange = () => {
@@ -259,6 +299,7 @@ export default function App() {
         return;
       }
       setRoute(getRouteFromHash());
+      setCurrentGroupId(getGroupIdFromHash());
     };
     window.addEventListener("hashchange", handleChange);
     return () => window.removeEventListener("hashchange", handleChange);
@@ -394,15 +435,22 @@ export default function App() {
           onProfileChange={updateProfile}
         />
       )}
-      {route === "budgets" && (
-        <div className="screen">
-          <div className="card">
-            <p className="page-title">Budgets</p>
-            <p style={{ fontSize: 14, color: "var(--muted)", marginTop: 8 }}>
-              Budget tracking is not set up yet in this build.
-            </p>
-          </div>
-        </div>
+      {route === "groups" && !currentGroupId && (
+        <GroupsList
+          session={session}
+          navigate={navigate}
+          useGroupsHook={groupsHook}
+        />
+      )}
+      {route === "groups" && currentGroupId && (
+        <GroupDetail
+          groupId={currentGroupId}
+          session={session}
+          navigate={navigate}
+          useGroupsHook={groupsHook}
+          expensePrefill={groupExpensePrefill}
+          onExpensePrefillConsumed={() => setGroupExpensePrefill(null)}
+        />
       )}
     </>
   );
@@ -417,7 +465,7 @@ export default function App() {
           <AppHeader displayName={displayName} avatarSrc={profileAvatarSrc} onMenuClick={() => setMenuOpen(true)} menuOpen={menuOpen}/>
           <main className="app-main">{screenContent}</main>
           <BottomNav route={route} navigate={navigate}/>
-          <FAB session={session} onSaved={handleFabSaved} addToast={addToast} onUndoTransaction={handleUndoTransaction} />
+          <FAB session={session} onSaved={handleFabSaved} addToast={addToast} onUndoTransaction={handleUndoTransaction} route={route} currentGroupId={currentGroupId} onGroupExpenseParsed={setGroupExpensePrefill} />
         </div>
       </div>
 
@@ -435,8 +483,19 @@ export default function App() {
           <DesktopHeader route={route} displayName={displayName} avatarSrc={profileAvatarSrc} activeFilter={activeFilter}/>
           <main className="desktop-main">{screenContent}</main>
         </div>
-        <FAB session={session} onSaved={handleFabSaved} addToast={addToast} onUndoTransaction={handleUndoTransaction} />
+        <FAB session={session} onSaved={handleFabSaved} addToast={addToast} onUndoTransaction={handleUndoTransaction} route={route} currentGroupId={currentGroupId} onGroupExpenseParsed={setGroupExpensePrefill} />
       </div>
+
+      {import.meta.env.DEV && (
+        <div style={{
+          position: "fixed", bottom: "16px", left: "16px", background: "#dc2626", color: "white", 
+          padding: "4px 8px", borderRadius: "6px", fontSize: "12px", fontWeight: "bold", zIndex: 9999,
+          boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1)", pointerEvents: "none",
+          letterSpacing: "0.5px"
+        }}>
+          DEV MODE
+        </div>
+      )}
     </>
   );
 }

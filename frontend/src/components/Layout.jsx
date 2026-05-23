@@ -50,6 +50,10 @@ export function DesktopSidebar({ route, navigate, displayName }) {
             <span>{tab.label}</span>
           </button>
         ))}
+        <button className={`sidebar-nav-item ${route === "groups" ? "active" : ""}`} onClick={() => navigate("groups")}>
+          <span className="sidebar-nav-icon"><Icon name="split" size={20}/></span>
+          <span>Groups</span>
+        </button>
       </nav>
       <div className="sidebar-user">
         <div className="sidebar-avatar">{displayName[0]?.toUpperCase() || "N"}</div>
@@ -68,6 +72,7 @@ export function DesktopHeader({ route, displayName, avatarSrc, activeFilter }) {
   const routeTitles = {
     privacy: "Privacy Policy",
     terms: "Terms of Service",
+    groups: "Group Expenses",
   };
   return (
     <header className="desktop-header">
