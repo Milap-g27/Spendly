@@ -17,6 +17,7 @@ import { InsightsScreen } from "./components/Insights";
 import { ProfileScreen } from "./components/Profile";
 import { AuthScreen } from "./components/Auth";
 import { AddTransactionScreen } from "./components/AddTransaction";
+import { ScanReceiptScreen } from "./components/ScanReceipt";
 import { PrivacyPolicyScreen } from "./pages/PrivacyPolicy";
 import { TermsScreen } from "./pages/Terms";
 import { ToastContainer } from "./components/Toast";
@@ -416,6 +417,15 @@ export default function App() {
         <AddTransactionScreen 
           session={session} 
           navigate={navigate} 
+          setTransactions={setTransactions}
+          addToast={addToast}
+          onUndoTransaction={handleUndoTransaction}
+        />
+      )}
+      {route === "scan" && (
+        <ScanReceiptScreen
+          session={session}
+          navigate={navigate}
           setTransactions={setTransactions}
           addToast={addToast}
           onUndoTransaction={handleUndoTransaction}

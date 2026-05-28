@@ -50,6 +50,10 @@ export function DesktopSidebar({ route, navigate, displayName }) {
             <span>{tab.label}</span>
           </button>
         ))}
+        <button className={`sidebar-nav-item ${route === "scan" ? "active" : ""}`} onClick={() => navigate("scan")}>
+          <span className="sidebar-nav-icon"><Icon name="scan" size={20}/></span>
+          <span>Scan</span>
+        </button>
         <button className={`sidebar-nav-item ${route === "groups" ? "active" : ""}`} onClick={() => navigate("groups")}>
           <span className="sidebar-nav-icon"><Icon name="split" size={20}/></span>
           <span>Groups</span>
@@ -73,6 +77,7 @@ export function DesktopHeader({ route, displayName, avatarSrc, activeFilter }) {
     privacy: "Privacy Policy",
     terms: "Terms of Service",
     groups: "Group Expenses",
+    scan: "Scan Document",
   };
   return (
     <header className="desktop-header">

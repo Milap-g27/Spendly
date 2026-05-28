@@ -1,4 +1,5 @@
 import { categoryMeta, iconByCategory } from "./constants";
+import { supabase } from "./supabaseClient";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "";
 
@@ -39,6 +40,7 @@ export function getRouteFromHash() {
   if (clean.startsWith("privacy")) return "privacy";
   if (clean.startsWith("terms")) return "terms";
   if (clean.startsWith("add")) return "add";
+  if (clean.startsWith("scan")) return "scan";
   if (clean.startsWith("groups")) return "groups";
   return "dashboard";
 }
@@ -113,4 +115,18 @@ export function exportToCSV(transactions) {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+}
+
+/* ── Receipt Scan Helpers ────────────────────────────────────── */
+export async function uploadReceiptImage(file, userId) {
+  const timestamp = Date.now();
+  const ext = file.name.split(".").pop();
+  const path = `${userId}/${timestamp}.${ext}`;
+
+  const { data, error } = await supabase.storage
+    .from("receipts")
+    .upload(path, file, { contentType: file.type, upsert: false });
+
+  if (error) throw error;
+  return data.path;
 }

@@ -41,3 +41,12 @@ export const EXAMPLE_PHRASES = [
   "200 rs panipuri",
   "freelance project 8000 received",
 ];
+
+/* ── Scan Receipt Constants ─────────────────────────────────── */
+export const SCAN_MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+export const SCAN_ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic"];
+export const SCAN_CONFIDENCE_COLORS = {
+  high: "#16a34a",
+  medium: "#f59e0b",
+  low: "#dc2626",
+};

@@ -342,6 +342,17 @@ export function AddTransactionScreen({ session, navigate, setTransactions, addTo
       <div className="card">
         <p className="page-title">ADD TRANSACTION</p>
 
+        {/* Scan Receipt shortcut */}
+        <button
+          type="button"
+          className="scan-action-btn"
+          onClick={() => navigate("scan")}
+          style={{ width: "100%", marginBottom: 16, background: "linear-gradient(135deg, var(--accent-light) 0%, #ede9fe 100%)", borderColor: "transparent", color: "var(--accent)" }}
+        >
+          <Icon name="scan" size={20} />
+          <span>📷 Scan Receipt or Bill</span>
+        </button>
+
         {error && (
           <div style={{
             background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 12,
