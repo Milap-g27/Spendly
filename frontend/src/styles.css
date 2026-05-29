@@ -1738,6 +1738,7 @@ input, textarea, select { font-family: inherit; font-size: 16px; }
   display: grid; place-items: center; margin-bottom: 2px;
 }
 
+
 /* ── Floating Action Button ─────────────────────────────── */
 .fab {
   position: fixed; bottom: calc(var(--bottom-nav-h) + 16px); right: 20px;
@@ -1856,9 +1857,30 @@ input, textarea, select { font-family: inherit; font-size: 16px; }
 .fab-save-btn.expense { background: #dc2626; color: #fff; }
 .fab-save-btn:hover { opacity: .9; }
 .fab-popup-tip {
-  text-align: center; padding: 10px 20px 14px;
   font-size: 12px; color: var(--muted);
+}
+.fab-popup-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 20px 14px;
   border-top: 1px solid var(--border);
+}
+.fab-scan-shortcut {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px;
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  color: #fff;
+  border: none; border-radius: 20px;
+  font-family: inherit; font-size: 12px; font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.fab-scan-shortcut:hover {
+  transform: scale(1.04);
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.35);
+}
+.fab-scan-shortcut:active {
+  transform: scale(0.97);
 }
 
 /* ── Manual Add Transaction Form ───────────────────────────── */

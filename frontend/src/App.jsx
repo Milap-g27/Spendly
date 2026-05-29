@@ -31,7 +31,7 @@ const FAB_EXAMPLES = [
 ];
 
 /* ── FAB Component ────────────────────────────────────────────────────── */
-function FAB({ session, onSaved, addToast, onUndoTransaction, route, currentGroupId, onGroupExpenseParsed }) {
+function FAB({ session, onSaved, addToast, onUndoTransaction, route, currentGroupId, onGroupExpenseParsed, navigate }) {
   const [open, setOpen]       = useState(false);
   const [text, setText]       = useState("");
   const [parsed, setParsed]   = useState(null);
@@ -218,7 +218,17 @@ function FAB({ session, onSaved, addToast, onUndoTransaction, route, currentGrou
             </div>
           )}
         </div>
-        <p className="fab-popup-tip">{isGroupMode ? "AI will extract amount & description" : "Powered by AI · Press Enter to parse"}</p>
+        <div className="fab-popup-footer">
+          <p className="fab-popup-tip">{isGroupMode ? "AI will extract amount & description" : "Powered by AI · Press Enter to parse"}</p>
+          {!isGroupMode && (
+            <button className="fab-scan-shortcut" onClick={() => { close(); navigate("scan"); }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 7h3l2-3h6l2 3h3v12H4z"/><circle cx="12" cy="13" r="3.25"/>
+              </svg>
+              Scan Document
+            </button>
+          )}
+        </div>
       </div>
 
       {/* The + button */}
@@ -475,7 +485,7 @@ export default function App() {
           <AppHeader displayName={displayName} avatarSrc={profileAvatarSrc} onMenuClick={() => setMenuOpen(true)} menuOpen={menuOpen}/>
           <main className="app-main">{screenContent}</main>
           <BottomNav route={route} navigate={navigate}/>
-          <FAB session={session} onSaved={handleFabSaved} addToast={addToast} onUndoTransaction={handleUndoTransaction} route={route} currentGroupId={currentGroupId} onGroupExpenseParsed={setGroupExpensePrefill} />
+          <FAB session={session} onSaved={handleFabSaved} addToast={addToast} onUndoTransaction={handleUndoTransaction} route={route} currentGroupId={currentGroupId} onGroupExpenseParsed={setGroupExpensePrefill} navigate={navigate} />
         </div>
       </div>
 
@@ -493,7 +503,7 @@ export default function App() {
           <DesktopHeader route={route} displayName={displayName} avatarSrc={profileAvatarSrc} activeFilter={activeFilter}/>
           <main className="desktop-main">{screenContent}</main>
         </div>
-        <FAB session={session} onSaved={handleFabSaved} addToast={addToast} onUndoTransaction={handleUndoTransaction} route={route} currentGroupId={currentGroupId} onGroupExpenseParsed={setGroupExpensePrefill} />
+        <FAB session={session} onSaved={handleFabSaved} addToast={addToast} onUndoTransaction={handleUndoTransaction} route={route} currentGroupId={currentGroupId} onGroupExpenseParsed={setGroupExpensePrefill} navigate={navigate} />
       </div>
 
       {import.meta.env.DEV && (

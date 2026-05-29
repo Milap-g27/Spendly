@@ -33,7 +33,7 @@ export function ScanReceiptScreen({ session, navigate, setTransactions, addToast
       return "Unsupported format. Use JPG, PNG, or WebP.";
     }
     if (file.size > SCAN_MAX_FILE_SIZE) {
-      return `File too large. Maximum size is 5 MB.`;
+      return `File too large. Maximum size is 15 MB.`;
     }
     return null;
   };
@@ -213,7 +213,7 @@ export function ScanReceiptScreen({ session, navigate, setTransactions, addToast
             </button>
           </div>
 
-          <p className="scan-format-hint">Supports: JPG, PNG, WebP · Max 5 MB</p>
+          <p className="scan-format-hint">Supports: JPG, PNG, WebP · Max 15 MB</p>
 
           {error && (
             <div className="scan-error">
